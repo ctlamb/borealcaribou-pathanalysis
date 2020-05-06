@@ -244,7 +244,7 @@ Correlation marix
 
 ``` r
 M <- cor(df%>%
-           select(disturb.p,LAI, Moose.Density, WolfDensit,caribou.lambda)%>%
+           dplyr::select(disturb.p,LAI, Moose.Density, WolfDensit,caribou.lambda)%>%
            rename(`Habitat alteration`=disturb.p,
                   `Vegetation index`=LAI,
                   `Moose density`=Moose.Density,
@@ -442,7 +442,7 @@ data.frame(model=c("A","B","C","D","E","F"),
 #lm(WolfDensit~ disturb.p + Moose.Density, data=df)%>%summary() 
 ##no, moose density remains significantly positive (p=0.003), disturb.p has no effect (p=0.76)
 
-read_csv(here::here("tables", "aic.csv"))%>%print()
+read_csv(here::here("tables", "aic.csv"))%>%as_tibble()%>%print()
 ```
 
 bootstrap D-Separation analysis
@@ -652,6 +652,7 @@ mod.sel.compile.raw%>%
   filter(dAICc==0 & p>0.05)%>%
   count(description)%>%
   mutate(prop=((n/sum(n))*100)%>%round(1))%>%
+  as_tibble()%>%
   print()
 ```
 
