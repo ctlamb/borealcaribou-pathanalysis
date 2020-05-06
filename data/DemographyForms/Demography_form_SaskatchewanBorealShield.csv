@@ -1,0 +1,5 @@
+﻿Area,Year,S,R (calf:cow),R/2 (female calves:cow),Rrm (X/2/(1-X/2)),Lambda (S/(1-R/2)),Lambda(S/(1-Rrm)),Reported,n_survival,n_composition,N_composition
+Boreal Shield,2014,0.9143,0.1976,0.0988,0.0899,1.0145,1.0046,,94,64,235
+Boreal Shield,2015,0.9483,0.216,0.108,0.0975,1.0631,1.0507,,79,69,302
+Boreal Shield,2016,0.8719,0.1342,0.0671,0.0629,0.9346,0.9304,,68,50,197
+Boreal Shield,2017,0.8524,0.2374,0.1187,0.1061,0.9672,0.9536,,49,34,197

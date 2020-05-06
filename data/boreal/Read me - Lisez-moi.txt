@@ -1,0 +1,17 @@
+
+(Le français suit.)
+
+Read me.
+
+Permission to download and use the shapefiles defining the North American boreal zone, that were developed as part of the study on “The extent of the North American boreal zone” by Natural Resource Canada’s Dr. J.P. Brandt, is subject to the NRCan-CFS End-User Agreement for Digital Data. These spatial data are provided in a 21Mb ESRI shapefile. In order to view these data, you require shapefile compatible GIS software. For more information on ESRI shapefiles and software please visit ESRI’s website (www.esri.com).
+
+For further information, please contact Dr. James Brandt, Science Advisor (613)947-8986 or James.Brandt@NRCan-RNCan.gc.ca.
+
+
+* * * * * * * * * * 
+
+Lisez-moi.
+
+La permission de télécharger et d'utiliser les fichiers de formes définissant la zone boréale nord-américaine, qui ont été élaborés dans le cadre de l’étude dont traite l’article de J.P. Brandt de Ressources naturelles Canada, intitulé « The extent of the North American boreal zone » est sous réserve des modalités de l'Entente d'utilisation de données numériques de RNCan-SCF. Les données géospatiales sont disponibles en fichiers de formes ESRI de 21 Mo. La visualisation de ces données requiert un logiciel SIG capable de lire les fichiers de formes. Pour plus d’information sur les fichiers de formes et le logiciel d’ESRI, veuillez consulter le site d’ESRI (www.esri.com).
+
+Pour de plus amples renseignements, s'il vous plaît communiquer avec James Brandt, conseiller scientifique (613) 947-8986 ou James.Brandt@NRCan-RNCan.gc.ca.
