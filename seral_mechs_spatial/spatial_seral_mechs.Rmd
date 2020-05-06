@@ -1,0 +1,147 @@
+
+---
+title: "Mechanisms creating early seral productivity-spatial"
+author: "Clayton T. Lamb"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output: github_document
+---
+```{r render, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'}
+rmarkdown::render('spatial_seral_mechs.Rmd',
+                  output_file = "README.md")
+```
+
+##Load Data, Functions and Cleanup Data
+```{r Load Data, results='hide', message=FALSE, warning=FALSE}
+library(raster)
+library(sf)
+library(mapview)
+library(here)
+library(velox)
+library(MuMIn)
+library(ggeffects)
+library(ggpubr)
+library(knitr)
+library(tidyverse)
+
+
+##load rasters
+vi <- raster(here::here("data", "dvi_annual_500m", "2010.tif"))
+names(vi) <- "evi"
+p <- raster(here::here("data", "climate", "precip.tif"))
+t <- raster(here::here("data", "climate", "temp.tif"))
+
+stack <- stack(vi,p,t)
+plot(stack)
+
+
+##load points
+pt <- st_read(here::here("data", "pointclip", "PointClip.shp"))%>%
+  cbind(st_coordinates(.))%>%
+  as_tibble()%>%
+  dplyr::select(LinkID, X, Y)
+
+##Load Data
+pt <- read.table(here("data", "CleanProductivityData.csv"), header=TRUE, sep=",")%>%
+  dplyr::select(-X, -OID_)%>%
+  left_join(pt, by="LinkID")
+
+##make spatial and convert lat/long to degrees
+pt <- pt%>%
+  st_as_sf(coords=c("X","Y"), crs="+proj=lcc +lat_1=49 +lat_2=77 +lat_0=49 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")%>%
+  st_transform("+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")%>%
+  st_buffer(990)
+
+
+##extract 
+pt$evi <- velox(vi)$extract(sp=pt, fun=mean)[,1]
+pt$precip <- velox(p)$extract(sp=pt, fun=mean)[,1]
+pt$temp <- velox(t)$extract(sp=pt, fun=mean)[,1]
+
+##to df
+pt.d <-pt%>%
+  cbind(st_centroid(.)%>%st_coordinates())%>%
+  as_data_frame()%>%
+  mutate(CanLandcover=as.factor(CanLandcover))%>%
+  filter(!CanLandcover%in%c("15","16", "17", "18", "19")) ##get rid of water, ice, and cities
+```
+
+
+##Run Models
+```{r models,  message=FALSE, warning=FALSE}
+###mods
+m1 <- lm(evi~temp + precip + CanLandcover + TotalDistArea, data=pt.d)
+m2 <- lm(evi~X + Y + CanLandcover + TotalDistArea, data=pt.d)
+
+
+model.sel(m1,m2)%>%kable()
+```
+
+
+##Plot Results
+```{r results,  message=FALSE, warning=FALSE}
+##PLOT
+p1 <- ggplot(ggpredict(m1, terms=c("temp")), aes(x/10, predicted)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = .1)+
+  xlab("Temperature (celcius)")+
+  ylab("Vegetation index")+
+  theme_bw()+
+  ylim(100,2500)
+
+p2 <- ggplot(ggpredict(m1, terms=c("precip")), aes(x/10, predicted)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = .1)+
+  xlab("Precipitation (cm/yr)")+
+  ylab("Vegetation index")+
+  theme_bw()+
+  ylim(100,2500)
+
+p3 <- ggplot(ggpredict(m1, terms=c("CanLandcover")), aes(as.factor(x), predicted)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width=0)+
+  xlab("Landcover")+
+  ylab("Vegetation index")+
+  theme_bw()+
+  ylim(100,2500)
+
+p4 <- ggplot(ggpredict(m1, terms=c("TotalDistArea")), aes(x/4*100, predicted)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = .1)+
+  xlab("Habitat alteration (%)")+
+  ylab("Vegetation index")+
+  theme_bw()+
+  ylim(100,2500)
+
+ggarrange(p1,p2,p3,p4, nrow=2, ncol=2, labels="AUTO")
+ggsave("marginaleffects.png", width=5, height=5, units="in")
+#ggsave("disturb.png", width=3, height=3, units="in", plot=p1)
+
+```
+
+##Plot Tables
+```{r tables,  message=FALSE, warning=FALSE}
+###standardize between 0-1 for effect size
+pt.d2<- pt.d%>%
+  mutate(TotalDistArea=(TotalDistArea-min(TotalDistArea, na.rm=TRUE))/(max(TotalDistArea, na.rm=TRUE)-min(TotalDistArea, na.rm=TRUE)),
+         temp=(temp-min(temp, na.rm=TRUE))/(max(temp, na.rm=TRUE)-min(temp, na.rm=TRUE)),
+         precip=(precip-min(precip, na.rm=TRUE))/(max(precip, na.rm=TRUE)-min(precip, na.rm=TRUE))
+         )
+
+
+m1s <- lm(evi~temp + precip + CanLandcover + TotalDistArea, data=pt.d2)
+
+
+##table
+#install.packages("gtsummary")
+library(gtsummary)
+t1 <- tbl_regression(m1)
+t2 <- tbl_regression(m1s)
+
+tbl_merge_ex1 <-
+  tbl_merge(
+    tbls = list(t1, t2),
+    tab_spanner = c("**Original**", "**Standardized**")
+  )
+
+tbl_merge_ex1
+```
