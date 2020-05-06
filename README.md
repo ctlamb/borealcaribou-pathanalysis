@@ -18,7 +18,7 @@ library(igraph)
 library(QuantPsyc)
 library(ggpubr)
 library(MuMIn)
-library(usethis)
+library(knitr)
 library(tidyverse)
 
 ##data
@@ -442,8 +442,17 @@ data.frame(model=c("A","B","C","D","E","F"),
 #lm(WolfDensit~ disturb.p + Moose.Density, data=df)%>%summary() 
 ##no, moose density remains significantly positive (p=0.003), disturb.p has no effect (p=0.76)
 
-read_csv(here::here("tables", "aic.csv"))%>%as_tibble()%>%print()
+read_csv(here::here("tables", "aic.csv"))%>%as_tibble()%>%kable()
 ```
+
+| model | description                                                    |    K|      p|    AICc|  dAICc|
+|:------|:---------------------------------------------------------------|----:|------:|-------:|------:|
+| D     | green&gt;moose&gt;wolf&gt;caribou, ha                          |    8|  0.511|   75.21|   0.00|
+| A     | green&gt;moose&gt;wolf, ha&gt;caribou                          |    8|  0.034|   86.35|  11.14|
+| F     | green&gt;moose&gt;wolf, green&gt;caribou, ha                   |    8|  0.006|   88.66|  13.45|
+| E     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou               |    9|  0.523|  117.10|  41.89|
+| B     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf                  |    9|  0.340|  119.23|  44.02|
+| C     | green&gt;moose&gt;wolf, green&gt;caribou, moose&gt;caribou, ha |    9|  0.043|  126.81|  51.60|
 
 bootstrap D-Separation analysis
 -------------------------------
@@ -653,8 +662,14 @@ mod.sel.compile.raw%>%
   count(description)%>%
   mutate(prop=((n/sum(n))*100)%>%round(1))%>%
   as_tibble()%>%
-  print()
+  kable()
 ```
+
+| description                                  |    n|  prop|
+|:---------------------------------------------|----:|-----:|
+| green&gt;moose&gt;wolf, green&gt;caribou, ha |   10|   2.1|
+| green&gt;moose&gt;wolf, ha&gt;caribou        |    1|   0.2|
+| green&gt;moose&gt;wolf&gt;caribou, ha        |  457|  97.6|
 
 Plot paths
 ----------
