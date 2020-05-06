@@ -21,6 +21,7 @@ library(MuMIn)
 library(ggeffects)
 library(ggpubr)
 library(knitr)
+library(gtsummary)
 library(tidyverse)
 
 
@@ -132,8 +133,6 @@ m1s <- lm(evi~temp + precip + CanLandcover + TotalDistArea, data=pt.d2)
 
 
 ##table
-#install.packages("gtsummary")
-library(gtsummary)
 t1 <- tbl_regression(m1)
 t2 <- tbl_regression(m1s)
 
