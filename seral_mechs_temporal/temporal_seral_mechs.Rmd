@@ -61,8 +61,16 @@ cb.year <-  cb%>%
 mean(st_area(cb.year))
 quantile(st_area(cb.year), 0.05)
 quantile(st_area(cb.year), 0.95)
+```
+##Map
+```{r map, message=FALSE, warning=FALSE}
+can <- st_read(here::here("data", "canada", "canada.shp"))%>%
+  st_transform(st_crs(cb.year))
 
-mapview(cb.year)
+
+plot(st_geometry(cb.year),  border = 'grey', axes = TRUE)
+plot(st_geometry(can), pch = 3, col = 'grey', add = TRUE)
+plot(st_geometry(cb.year),  border = 'red', axes = TRUE, add = TRUE)
 ```
 
 ##extract dVI to cublocks

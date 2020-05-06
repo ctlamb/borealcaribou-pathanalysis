@@ -83,6 +83,30 @@ quantile(st_area(cb.year), 0.95)
 
     ## 1644879 [m^2]
 
+Map
+---
+
+``` r
+can <- st_read(here::here("data", "canada", "canada.shp"))%>%
+  st_transform(st_crs(cb.year))
+```
+
+    ## Reading layer `canada' from data source `/Users/clayton.lamb/Google Drive/Documents/University/Work/Serrouya_BouPathway/borealcaribou-pathanalysis/data/canada/canada.shp' using driver `ESRI Shapefile'
+    ## Simple feature collection with 13 features and 6 fields
+    ## geometry type:  MULTIPOLYGON
+    ## dimension:      XY
+    ## bbox:           xmin: -141.0021 ymin: 41.68797 xmax: -52.61917 ymax: 83.11506
+    ## epsg (SRID):    4326
+    ## proj4string:    +proj=longlat +datum=WGS84 +no_defs
+
+``` r
+plot(st_geometry(cb.year),  border = 'grey', axes = TRUE)
+plot(st_geometry(can), pch = 3, col = 'grey', add = TRUE)
+plot(st_geometry(cb.year),  border = 'red', axes = TRUE, add = TRUE)
+```
+
+![](README_files/figure-markdown_github/map-1.png)
+
 extract dVI to cublocks
 -----------------------
 
