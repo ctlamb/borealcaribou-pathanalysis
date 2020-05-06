@@ -61,6 +61,8 @@ cb.year <-  cb%>%
 mean(st_area(cb.year))
 quantile(st_area(cb.year), 0.05)
 quantile(st_area(cb.year), 0.95)
+
+mapview(cb.year)
 ```
 
 ##extract dVI to cublocks
