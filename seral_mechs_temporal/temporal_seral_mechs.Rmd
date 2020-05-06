@@ -1,0 +1,131 @@
+
+---
+author: "Clayton T. Lamb"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output: github_document
+---
+```{r render, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, results='hide'}
+rmarkdown::render('temporal_seral_mechs.Rmd',
+                  output_file = "README.md")
+```
+
+##Load Data, Functions and Cleanup Data
+```{r Load Data, message=FALSE, warning=FALSE}
+library(raster)
+library(sf)
+library(mapview)
+library(here)
+library(tidyverse)
+
+##load cutblocks
+cb<- st_read(here::here("data", "cutblocks", "cutblocks.shp"))
+
+##load dVI
+rastlist <- list.files(path = here::here("data",  "dvi_annual_500m"), pattern='.tif', all.files=TRUE, full.names=TRUE)
+
+order <- str_split(list.files(path = here::here("data",  "dvi_annual_500m"), pattern='.tif', all.files=TRUE),
+            ".tif", simplify=TRUE)[,1]%>%
+    as.numeric()
+
+new.order <- tibble(reord=1:length(order),
+       current=order)%>%
+  arrange(current)
+  
+stack <- stack(rastlist[new.order$reord])
+
+##load water mask
+water <- raster(here::here("data", "water.tif"))
+
+##remove water from dVI
+stack<- stack*water
+
+##fix up layers
+for(i in 1:nlayers(stack)){
+  values(stack[[i]])[values(stack[[i]])<0 & !is.na(values(stack[[i]]))] <- 0
+}
+
+##rename
+names(stack) <- paste0("X", 2000:2019)
+
+##plot
+plot(stack)
+```
+
+##filter cutblocks to years of interest, and those of appropriate size
+```{r filter, message=FALSE, warning=FALSE}
+cb.year <-  cb%>%
+  filter(HARVEST_YE %in% c(2003:2016))%>%
+  mutate(area=st_area(.)%>%as.numeric())%>%
+  filter(area>250000)
+
+mean(st_area(cb.year))
+quantile(st_area(cb.year), 0.05)
+quantile(st_area(cb.year), 0.95)
+```
+
+##extract dVI to cublocks
+```{r extract, results='hide', message=FALSE, warning=FALSE}
+a <- raster::extract(stack,as(cb.year,"Spatial"), fun=mean, na.rm=TRUE, method="simple",df=TRUE)
+    
+df <- cbind(as.data.frame(cb.year),a)%>%
+  as.data.frame()%>%
+  dplyr::select(-geometry)%>%
+  gather(year,dvi,-HARVEST_YE,-ID,-prov)%>%
+  mutate(year=str_sub(year,2,5)%>%as.numeric)%>%
+  mutate(time=year-HARVEST_YE)
+```
+
+
+##Plot
+```{r plot, results='hide', message=FALSE, warning=FALSE}
+precut <- df%>%
+  ungroup()%>%
+  filter(time<=-1)%>%
+  group_by(ID)%>%
+  summarise(baseline=mean(dvi, na.rm=TRUE))
+  
+contrast <- df%>%
+  left_join(precut, by="ID")%>%
+  drop_na(baseline)%>%
+  ungroup()%>%
+  group_by(ID)%>%
+  mutate(change=((dvi-baseline)/baseline)*100)%>%
+  ungroup()
+
+
+ contrast%>%
+   group_by(time, prov)%>%
+  summarise(change.sum=mean(change, na.rm=TRUE),
+            se=sqrt(sd(change, na.rm=TRUE)/n()))%>%
+  mutate(lower=change.sum-(se*1.96),
+         upper=change.sum+(se*1.96))%>%
+  filter(time>=-10 & time<17)%>%
+ggplot(aes(x=time, y=change.sum))+
+  geom_vline(xintercept = 0, linetype="dotted")+
+  geom_point(col="red")+
+  theme_bw()+
+  xlab("time since cut (years)")+
+  ylab("change from pre-cut dVI (%)")+
+   facet_grid(.~prov)
+ 
+ 
+ contrast%>%
+   group_by(time)%>%
+   summarise(change.sum=mean(change, na.rm=TRUE),
+             se=sqrt(sd(change, na.rm=TRUE)/n()),
+             lower=quantile(change, 0.33),
+             upper=quantile(change,0.66))%>%
+
+   filter(time>=-10 & time<18)%>%
+   ggplot(aes(x=time, y=change.sum))+
+   geom_vline(xintercept = 0, linetype="dotted")+
+   geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=0.2)+
+   geom_point(col="red")+
+   theme_bw()+
+   xlab("Time since cut (years)")+
+   ylab("Change from pre-cut vegetation index (%)")
+
+ ggsave(here::here("time_since.png"),width=6, height=4)
+```
+
+
