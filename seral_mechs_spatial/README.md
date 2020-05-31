@@ -1,7 +1,7 @@
 Mechanisms creating early seral productivity-spatial
 ================
 Clayton T. Lamb
-06 May, 2020
+30 May, 2020
 
 Load Data, Functions and Cleanup Data
 -------------------------------------
@@ -16,6 +16,7 @@ library(MuMIn)
 library(ggeffects)
 library(ggpubr)
 library(knitr)
+library(gtsummary)
 library(tidyverse)
 
 
@@ -88,7 +89,7 @@ Plot Results
 p1 <- ggplot(ggpredict(m1, terms=c("temp")), aes(x/10, predicted)) +
   geom_line() +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = .1)+
-  xlab("Temperature (celcius)")+
+  xlab("Temperature (Celsius)")+
   ylab("Vegetation index")+
   theme_bw()+
   ylim(100,2500)
@@ -143,8 +144,6 @@ m1s <- lm(evi~temp + precip + CanLandcover + TotalDistArea, data=pt.d2)
 
 
 ##table
-#install.packages("gtsummary")
-library(gtsummary)
 t1 <- tbl_regression(m1)
 t2 <- tbl_regression(m1s)
 
