@@ -1,7 +1,7 @@
 Caribou Path Analysis
 ================
 Clayton T. Lamb
-06 May, 2020
+25 August, 2020
 
 Load Data, Functions and Cleanup Data
 -------------------------------------
@@ -19,6 +19,7 @@ library(QuantPsyc)
 library(ggpubr)
 library(MuMIn)
 library(knitr)
+library(piecewiseSEM)
 library(tidyverse)
 
 ##data
@@ -75,14 +76,14 @@ ggarrange(a,b,c,d,nrow=2,ncol=2, labels ="AUTO")
 ![](README_files/figure-markdown_github/plot%20raw%20data-1.png)
 
 ``` r
-ggsave(here::here("plots","univar.png"), width=7, height=2.5, units="in")
+#ggsave(here::here("plots","univar.png"), width=7, height=2.5, units="in")
 ggarrange(b,c,e,nrow=1,ncol=3, labels ="AUTO")
 ```
 
 ![](README_files/figure-markdown_github/plot%20raw%20data-2.png)
 
 ``` r
-ggsave(here::here("plots","univar2.png"), width=7, height=2.5, units="in")
+#ggsave(here::here("plots","univar2.png"), width=7, height=2.5, units="in")
 
 
 f <- ggplot(df, aes(x=WolfDensit, y=survival))+
@@ -105,7 +106,7 @@ ggarrange(f,g,
 ![](README_files/figure-markdown_github/plot%20raw%20data-3.png)
 
 ``` r
-ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in")
+#ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in")
 ```
 
 Find intersections
@@ -146,7 +147,7 @@ predict(lm(Moose.Density~WolfDensit+I(WolfDensit^2), data=df), newdata=data.fram
 ```
 
     ##        1 
-    ## 2.951979
+    ## 3.037763
 
 ``` r
 ##plot
@@ -260,199 +261,89 @@ D-Separation analysis
 ---------------------
 
 ``` r
-###How to count parameters:
-##see Shipley 2013 https://esajournals.onlinelibrary.wiley.com/doi/full/10.1890/12-0976.1
-
-#A
-##green>moose>wolf, ha>caribou
-##independence statements
-### (WolfDensit,LAI)|{Moose.Density}
-### (caribou.lambda,LAI)|{disturb.p}
-### (caribou.lambda,Moose.Density)|{disturb.p, LAI}
-### (caribou.lambda,WolfDensit)|{disturb.p, Moose.Density}
-### (WolfDensit, disturb.p) | {Moose.Density}
-### (Moose.Density, disturb.p) | {LAI}
-KA <- 8
-
-indepence.test <- list(
-  lm(WolfDensit~ LAI + Moose.Density, data=df),
-  lm(caribou.lambda~LAI + disturb.p, data=df),
-  lm(caribou.lambda~Moose.Density + disturb.p + LAI, data=df),
-  lm(caribou.lambda~WolfDensit + disturb.p + Moose.Density, data=df),
-  lm(WolfDensit~disturb.p + Moose.Density, data=df),
-  lm(Moose.Density~disturb.p + LAI, data=df)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pA <- p.value
-fcA <- Fisher.c+((2*KA)*(nrow(df)/(nrow(df)-KA-1)))
+##lay out models
 mA <- "green>moose>wolf, ha>caribou"
-
-
-#B
-##green>moose>wolf>caribou, ha>wolf
-##independence statements
-### (WolfDensit,LAI)|{Moose.Density, disturb.p}
-### (caribou.lambda,LAI)|{WolfDensit}
-### (caribou.lambda,Moose.Density)|{WolfDensit, LAI}
-### (caribou.lambda,disturb.p)|{WolfDensit}
-### (Moose.Density, disturb.p) | {LAI}
-KB <- 9
-
-indepence.test <- list(
-  lm(WolfDensit~ LAI + Moose.Density + disturb.p, data=df),
-  lm(caribou.lambda~LAI + WolfDensit, data=df),
-  lm(caribou.lambda~Moose.Density + WolfDensit + LAI, data=df),
-  lm(caribou.lambda~disturb.p + WolfDensit, data=df),
-  lm(Moose.Density~disturb.p + LAI, data=df)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pB <- p.value
-fcB <- Fisher.c+((2*KB)*(nrow(df)/(nrow(df)-KB-1)))
 mB <- "green>moose>wolf>caribou, ha>wolf"
-
-
-##C
-##green>moose>wolf, green>caribou, moose>caribou, ha
-##independence statements
-### (WolfDensit,caribou.lambda)|{Moose.Density, LAI}
-### (WolfDensit,LAI)|{Moose.Density}
-### (caribou.lambda,disturb.p) | {Moose.Density, LAI}
-### (WolfDensit,disturb.p) | {Moose.Density}
-### (Moose.Density,disturb.p) | {LAI}
-KC <- 9
-
-indepence.test <- list(
-  lm(WolfDensit~ caribou.lambda + Moose.Density + LAI, data=df),
-  lm(WolfDensit~ LAI + Moose.Density, data=df),
-  lm(caribou.lambda~ disturb.p + Moose.Density + LAI, data=df),
-  lm(WolfDensit~ disturb.p + Moose.Density, data=df),
-  lm(Moose.Density~ disturb.p +  LAI, data=df)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pC <- p.value
-fcC <- Fisher.c+((2*KC)*(nrow(df)/(nrow(df)-KC-1)))
 mC <- "green>moose>wolf, green>caribou, moose>caribou, ha"
-
-
-
-#D
-##test path 1 green>moose>wolf>caribou, ha nowhere
-##independence statements
-### (WolfDensit,LAI)|{Moose.Density}
-### (caribou.lambda,LAI)|{WolfDensit}
-### (caribou.lambda,Moose.Density)|{WolfDensit, LAI}
-### (caribou.lambda,disturb.p) | {WolfDensit}
-### (WolfDensit,disturb.p) | {Moose.Density}
-### (Moose.Density,disturb.p) | {LAI}
-KD <- 8
-  
-indepence.test <- list(
-  lm(WolfDensit~ LAI + Moose.Density, data=df),
-  lm(caribou.lambda~LAI + WolfDensit, data=df),
-  lm(caribou.lambda~Moose.Density + WolfDensit + LAI, data=df),
-  lm(caribou.lambda~ disturb.p + WolfDensit, data=df),
-  lm(WolfDensit~ disturb.p + Moose.Density, data=df),
-  lm(Moose.Density~ disturb.p +  LAI, data=df)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pD <- p.value
-fcD <- Fisher.c+((2*KD)*(nrow(df)/(nrow(df)-KD-1)))
 mD <- "green>moose>wolf>caribou, ha"
-
-
-
-#E
-##green>moose>wolf>caribou, ha>caribou
-##independence statements
-### (WolfDensit,LAI)|{Moose.Density}
-### (caribou.lambda,LAI)|{WolfDensit, disturb.p}
-### (caribou.lambda,Moose.Density)|{WolfDensit, LAI, disturb.p}
-### (WolfDensit, disturb.p) | {Moose.Density}
-### (Moose.Density, disturb.p) | {LAI}
-KE <- 9
-
-indepence.test <- list(
-  lm(WolfDensit~ LAI + Moose.Density, data=df),
-  lm(caribou.lambda~LAI + WolfDensit + disturb.p, data=df),
-  lm(caribou.lambda~Moose.Density + WolfDensit + LAI + disturb.p, data=df),
-  lm(WolfDensit~disturb.p + Moose.Density, data=df),
-  lm(Moose.Density~disturb.p + LAI, data=df)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pE <- p.value
-fcE <- Fisher.c+((2*KE)*(nrow(df)/(nrow(df)-KE-1)))
 mE <- "green>moose>wolf>caribou, ha>caribou"
-
-
-##F
-##green>moose>wolf, green>caribou
-##independence statements
-### (caribou.lambda,Moose.Density)|{LAI}
-### (caribou.lambda,Wolf.Densit)|{Moose.Density, LAI}
-### (caribou.lambda,disturb.p) | {LAI}
-### (WolfDensit,disturb.p) | {Moose.Density}
-### (Moose.Density,disturb.p) | {LAI}
-
-KF <- 8
-
-indepence.test <- list(
-  lm(caribou.lambda~ Moose.Density + LAI, data=df),
-  lm(caribou.lambda~ WolfDensit + Moose.Density + LAI, data=df),
-  lm(caribou.lambda~ disturb.p + LAI, data=df),
-  lm(WolfDensit~ disturb.p + Moose.Density, data=df),
-  lm(Moose.Density~ disturb.p +  LAI, data=df)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pF <- p.value
-fcF <- Fisher.c+((2*KF)*(nrow(df)/(nrow(df)-KF-1)))
 mF <- "green>moose>wolf, green>caribou, ha"
+
+modelA <- psem(lm(Moose.Density ~ LAI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ disturb.p, df))
+
+modelB <- psem(lm(Moose.Density ~ LAI, df),
+               lm(WolfDensit ~ Moose.Density + disturb.p, df),
+               lm(caribou.lambda ~ WolfDensit, df))
+
+modelC <- psem(lm(Moose.Density ~ LAI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ Moose.Density+LAI, df),
+               lm(LAI~disturb.p, df))
+
+modelD <- psem(lm(Moose.Density ~ LAI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ WolfDensit, df),
+               lm(LAI~disturb.p, df))
+
+modelE <- psem(lm(Moose.Density ~ LAI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ WolfDensit +disturb.p, df))
+
+modelF <- psem(lm(Moose.Density ~ LAI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ LAI, df),
+               lm(LAI~disturb.p, df))
+
+
+
+
 
 ##summarize
 data.frame(model=c("A","B","C","D","E","F"),
                       description=c(mA,mB,mC,mD,mE,mF),
-                      K=c(KA,KB,KC,KD,KE,KF),
-                      p=round(c(pA,pB,pC,pD,pE,pF),3),
-                      AICc=round(c(fcA,fcB,fcC,fcD,fcE,fcF),2))%>%
+                      p=round(c(summary(modelA, .progressBar = F)$Cstat$P.Value,
+                           summary(modelB, .progressBar = F)$Cstat$P.Value,
+                           summary(modelC, .progressBar = F)$Cstat$P.Value,
+                           summary(modelD, .progressBar = F)$Cstat$P.Value,
+                           summary(modelE, .progressBar = F)$Cstat$P.Value,
+                           summary(modelF, .progressBar = F)$Cstat$P.Value
+                           ),3),
+                      K=c(summary(modelA, .progressBar = F)$IC$K,
+                           summary(modelB, .progressBar = F)$IC$K,
+                           summary(modelC, .progressBar = F)$IC$K,
+                           summary(modelD, .progressBar = F)$IC$K,
+                           summary(modelE, .progressBar = F)$IC$K,
+                           summary(modelF, .progressBar = F)$IC$K
+                           ),
+                      AICc=round(c(summary(modelA, .progressBar = F)$IC$AICc,
+                           summary(modelB, .progressBar = F)$IC$AICc,
+                           summary(modelC, .progressBar = F)$IC$AICc,
+                           summary(modelD, .progressBar = F)$IC$AICc,
+                           summary(modelE, .progressBar = F)$IC$AICc,
+                           summary(modelF, .progressBar = F)$IC$AICc
+                           ),2))%>%
   mutate(dAICc=AICc-min(AICc))%>%
   arrange(dAICc)%>%
-  write_csv(here::here("tables", "aic.csv"))
-
-###Are the two other paths B,E, that were excluded statistically important?
-#lm(caribou.lambda~ disturb.p + WolfDensit, data=df)%>%summary() 
-##no, wolf density remains significantly negative (p=0.008), disturb.p has no effect (p=0.82)
-
-#lm(WolfDensit~ disturb.p + Moose.Density, data=df)%>%summary() 
-##no, moose density remains significantly positive (p=0.003), disturb.p has no effect (p=0.76)
-
-read_csv(here::here("tables", "aic.csv"))%>%as_tibble()%>%kable()
+  as_tibble()%>%
+  kable()
 ```
 
-| model | description                                                    |    K|      p|    AICc|  dAICc|
-|:------|:---------------------------------------------------------------|----:|------:|-------:|------:|
-| D     | green&gt;moose&gt;wolf&gt;caribou, ha                          |    8|  0.511|   75.21|   0.00|
-| A     | green&gt;moose&gt;wolf, ha&gt;caribou                          |    8|  0.034|   86.35|  11.14|
-| F     | green&gt;moose&gt;wolf, green&gt;caribou, ha                   |    8|  0.006|   88.66|  13.45|
-| E     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou               |    9|  0.523|  117.10|  41.89|
-| B     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf                  |    9|  0.340|  119.23|  44.02|
-| C     | green&gt;moose&gt;wolf, green&gt;caribou, moose&gt;caribou, ha |    9|  0.043|  126.81|  51.60|
+| model | description                                                    |      p|    K|     AICc|   dAICc|
+|:------|:---------------------------------------------------------------|------:|----:|--------:|-------:|
+| F     | green&gt;moose&gt;wolf, green&gt;caribou, ha                   |  0.012|   12|  -596.69|    0.00|
+| D     | green&gt;moose&gt;wolf&gt;caribou, ha                          |  0.509|   12|  -422.88|  173.81|
+| C     | green&gt;moose&gt;wolf, green&gt;caribou, moose&gt;caribou, ha |  0.035|   13|  -272.50|  324.19|
+| A     | green&gt;moose&gt;wolf, ha&gt;caribou                          |  0.033|    9|   242.30|  838.99|
+| E     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou               |  0.516|   10|   350.05|  946.74|
+| B     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf                  |  0.336|   10|   375.44|  972.13|
+
+``` r
+###Is there another path (F), that was excluded but was maybe statistically important?
+#lm(caribou.lambda~ disturb.p + WolfDensit, data=df)%>%summary() 
+##no, wolf density remains significantly negative (p=0.0006), disturb.p has no effect (p=0.58)
+```
 
 bootstrap D-Separation analysis
 -------------------------------
@@ -460,190 +351,78 @@ bootstrap D-Separation analysis
 ``` r
 ####DSEP boot
 mod.sel.compile.raw <- data.frame()
-len <- data.frame()
+mod.sel.compile <- data.frame()
+#len <- data.frame()
 for(i in 1:1000){
   
   df.i <- df%>%sample_frac(1, replace=TRUE)
-  while (length(unique(df.i$Name))<=2)
+  while (length(unique(df.i$Name))<=4)
   {
     df.i <- df%>%sample_frac(1, replace=TRUE)
   }
-len <-rbind(len,data.frame(len=length(unique(df.i$Name))))
+#len <-rbind(len,data.frame(len=length(unique(df.i$Name))))
 
 
-#A
-##green>moose>wolf, ha>caribou
-##independence statements
-### (WolfDensit,LAI)|{Moose.Density}
-### (caribou.lambda,LAI)|{disturb.p}
-### (caribou.lambda,Moose.Density)|{disturb.p, LAI}
-### (caribou.lambda,WolfDensit)|{disturb.p, Moose.Density}
-### (WolfDensit, disturb.p) | {Moose.Density}
-### (Moose.Density, disturb.p) | {LAI}
-KA <- 8
+modelA <- psem(lm(Moose.Density ~ LAI, df.i),
+               lm(WolfDensit ~ Moose.Density, df.i),
+               lm(caribou.lambda ~ disturb.p, df.i))
 
-indepence.test <- list(
-  lm(WolfDensit~ LAI + Moose.Density, data=df.i),
-  lm(caribou.lambda~LAI + disturb.p, data=df.i),
-  lm(caribou.lambda~Moose.Density + disturb.p + LAI, data=df.i),
-  lm(caribou.lambda~WolfDensit + disturb.p + Moose.Density, data=df.i),
-  lm(WolfDensit~disturb.p + Moose.Density, data=df.i),
-  lm(Moose.Density~disturb.p + LAI, data=df.i)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pA <- p.value
-fcA <- Fisher.c+((2*KA)*(nrow(df.i)/(nrow(df.i)-KA-1)))
-mA <- "green>moose>wolf, ha>caribou"
+modelB <- psem(lm(Moose.Density ~ LAI, df.i),
+               lm(WolfDensit ~ Moose.Density + disturb.p, df.i),
+               lm(caribou.lambda ~ WolfDensit, df.i))
 
+modelC <- psem(lm(Moose.Density ~ LAI, df.i),
+               lm(WolfDensit ~ Moose.Density, df.i),
+               lm(caribou.lambda ~ Moose.Density+LAI, df.i))%>%
+  update(disturb.p ~ 1)
 
-#B
-##green>moose>wolf>caribou, ha>wolf
-##independence statements
-### (WolfDensit,LAI)|{Moose.Density, disturb.p}
-### (caribou.lambda,LAI)|{WolfDensit}
-### (caribou.lambda,Moose.Density)|{WolfDensit, LAI}
-### (caribou.lambda,disturb.p)|{WolfDensit}
-### (Moose.Density, disturb.p) | {LAI}
-KB <- 9
+modelD <- psem(lm(Moose.Density ~ LAI, df.i),
+               lm(WolfDensit ~ Moose.Density, df.i),
+               lm(caribou.lambda ~ WolfDensit, df.i))%>%
+  update(disturb.p ~ 1)
 
-indepence.test <- list(
-  lm(WolfDensit~ LAI + Moose.Density + disturb.p, data=df.i),
-  lm(caribou.lambda~LAI + WolfDensit, data=df.i),
-  lm(caribou.lambda~Moose.Density + WolfDensit + LAI, data=df.i),
-  lm(caribou.lambda~disturb.p + WolfDensit, data=df.i),
-  lm(Moose.Density~disturb.p + LAI, data=df.i)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pB <- p.value
-fcB <- Fisher.c+((2*KB)*(nrow(df.i)/(nrow(df.i)-KB-1)))
-mB <- "green>moose>wolf>caribou, ha>wolf"
+modelE <- psem(lm(Moose.Density ~ LAI, df.i),
+               lm(WolfDensit ~ Moose.Density, df.i),
+               lm(caribou.lambda ~ WolfDensit +disturb.p, df.i))
 
+modelF <- psem(lm(Moose.Density ~ LAI, df.i),
+               lm(WolfDensit ~ Moose.Density, df.i),
+               lm(caribou.lambda ~ LAI, df.i))%>%
+  update(disturb.p ~ 1)
 
-##C
-##green>moose>wolf, green>caribou, moose>caribou, ha
-##independence statements
-### (WolfDensit,caribou.lambda)|{Moose.Density, LAI}
-### (WolfDensit,LAI)|{Moose.Density}
-### (caribou.lambda,disturb.p) | {Moose.Density, LAI}
-### (WolfDensit,disturb.p) | {Moose.Density}
-### (Moose.Density,disturb.p) | {LAI}
-KC <- 9
-
-indepence.test <- list(
-  lm(WolfDensit~ caribou.lambda + Moose.Density + LAI, data=df.i),
-  lm(WolfDensit~ LAI + Moose.Density, data=df.i),
-  lm(caribou.lambda~ disturb.p + Moose.Density + LAI, data=df.i),
-  lm(WolfDensit~ disturb.p + Moose.Density, data=df.i),
-  lm(Moose.Density~ disturb.p +  LAI, data=df.i)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pC <- p.value
-fcC <- Fisher.c+((2*KC)*(nrow(df.i)/(nrow(df.i)-KC-1)))
-mC <- "green>moose>wolf, green>caribou, moose>caribou, ha"
-
-
-
-#D
-##test path 1 green>moose>wolf>caribou, ha nowhere
-##independence statements
-### (WolfDensit,LAI)|{Moose.Density}
-### (caribou.lambda,LAI)|{WolfDensit}
-### (caribou.lambda,Moose.Density)|{WolfDensit, LAI}
-### (caribou.lambda,disturb.p) | {WolfDensit}
-### (WolfDensit,disturb.p) | {Moose.Density}
-### (Moose.Density,disturb.p) | {LAI}
-KD <- 8
-
-indepence.test <- list(
-  lm(WolfDensit~ LAI + Moose.Density, data=df.i),
-  lm(caribou.lambda~LAI + WolfDensit, data=df.i),
-  lm(caribou.lambda~Moose.Density + WolfDensit + LAI, data=df.i),
-  lm(caribou.lambda~ disturb.p + WolfDensit, data=df.i),
-  lm(WolfDensit~ disturb.p + Moose.Density, data=df.i),
-  lm(Moose.Density~ disturb.p +  LAI, data=df.i)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pD <- p.value
-fcD <- Fisher.c+((2*KD)*(nrow(df.i)/(nrow(df.i)-KD-1)))
-mD <- "green>moose>wolf>caribou, ha"
-
-
-
-#E
-##green>moose>wolf>caribou, ha>caribou
-##independence statements
-### (WolfDensit,LAI)|{Moose.Density}
-### (caribou.lambda,LAI)|{WolfDensit, disturb.p}
-### (caribou.lambda,Moose.Density)|{WolfDensit, LAI, disturb.p}
-### (WolfDensit, disturb.p) | {Moose.Density}
-### (Moose.Density, disturb.p) | {LAI}
-KE <- 9
-
-indepence.test <- list(
-  lm(WolfDensit~ LAI + Moose.Density, data=df.i),
-  lm(caribou.lambda~LAI + WolfDensit + disturb.p, data=df.i),
-  lm(caribou.lambda~Moose.Density + WolfDensit + LAI + disturb.p, data=df.i),
-  lm(WolfDensit~disturb.p + Moose.Density, data=df.i),
-  lm(Moose.Density~disturb.p + LAI, data=df.i)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pE <- p.value
-fcE <- Fisher.c+((2*KE)*(nrow(df.i)/(nrow(df.i)-KE-1)))
-mE <- "green>moose>wolf>caribou, ha>caribou"
-
-
-##F
-##green>moose>wolf, green>caribou
-##independence statements
-### (caribou.lambda,Moose.Density)|{LAI}
-### (caribou.lambda,Wolf.Densit)|{Moose.Density, LAI}
-### (caribou.lambda,disturb.p) | {LAI}
-### (WolfDensit,disturb.p) | {Moose.Density}
-### (Moose.Density,disturb.p) | {LAI}
-
-KF <- 8
-
-indepence.test <- list(
-  lm(caribou.lambda~ Moose.Density + LAI, data=df.i),
-  lm(caribou.lambda~ WolfDensit + Moose.Density + LAI, data=df.i),
-  lm(caribou.lambda~ disturb.p + LAI, data=df.i),
-  lm(WolfDensit~ disturb.p + Moose.Density, data=df.i),
-  lm(Moose.Density~ disturb.p +  LAI, data=df.i)
-)
-P <- sapply(indepence.test, function(x) coef(summary(x))[2,4]) 
-Fisher.c <- -2*sum(log(P))
-d <- 2*length(P)
-p.value <- 1 - pchisq(Fisher.c, d)
-pF <- p.value
-fcF <- Fisher.c+((2*KF)*(nrow(df.i)/(nrow(df.i)-KF-1)))
-mF <- "green>moose>wolf, green>caribou, ha"
 
 
 ##summarize
 mod.sel <- data.frame(model=c("A","B","C","D","E","F"),
                       description=c(mA,mB,mC,mD,mE,mF),
-                      K=c(KA,KB,KC,KD,KE,KF),
-                      p=round(c(pA,pB,pC,pD,pE,pF),3),
-                      AICc=round(c(fcA,fcB,fcC,fcD,fcE,fcF),2))%>%
-  mutate(dAICc=AICc-min(AICc))%>%
+                      p=round(c(summary(modelA, .progressBar = F)$Cstat$P.Value,
+                           summary(modelB, .progressBar = F)$Cstat$P.Value,
+                           summary(modelC, .progressBar = F)$Cstat$P.Value,
+                           summary(modelD, .progressBar = F)$Cstat$P.Value,
+                           summary(modelE, .progressBar = F)$Cstat$P.Value,
+                           summary(modelF, .progressBar = F)$Cstat$P.Value
+                           ),3),
+                      K=c(summary(modelA, .progressBar = F)$IC$K,
+                           summary(modelB, .progressBar = F)$IC$K,
+                           summary(modelC, .progressBar = F)$IC$K,
+                           summary(modelD, .progressBar = F)$IC$K,
+                           summary(modelE, .progressBar = F)$IC$K,
+                           summary(modelF, .progressBar = F)$IC$K
+                           ),
+                      AICc=round(c(summary(modelA, .progressBar = F)$IC$AICc,
+                           summary(modelB, .progressBar = F)$IC$AICc,
+                           summary(modelC, .progressBar = F)$IC$AICc,
+                           summary(modelD, .progressBar = F)$IC$AICc,
+                           summary(modelE, .progressBar = F)$IC$AICc,
+                           summary(modelF, .progressBar = F)$IC$AICc
+                           ),2))%>%
+  mutate(dAICc=AICc-min(AICc),
+         iter=i)%>%
   arrange(dAICc)
+
 mod.sel.compile.raw <- rbind(mod.sel.compile.raw, mod.sel)
 
+mod.sel.compile <- rbind(mod.sel.compile, mod.sel%>%filter(p>0.05)%>%mutate(dAICc=AICc-min(AICc)))
 }
 # mod.sel.compile.raw%>%
 #   group_by(description)%>%
@@ -653,23 +432,26 @@ mod.sel.compile.raw <- rbind(mod.sel.compile.raw, mod.sel)
 #   group_by(description)%>%
 #   summarise(p=mean(p))
 
-mod.sel.compile <- mod.sel.compile.raw%>%
-  filter(dAICc==0 & p>.05)
+
 
 ##proportion of bootstrap samples where each model was top model (dAIC=0)
-mod.sel.compile.raw%>%
+mod.sel.compile%>%
   filter(dAICc==0 & p>0.05)%>%
   count(description)%>%
   mutate(prop=((n/sum(n))*100)%>%round(1))%>%
+  select(-n)%>%
+  arrange(-prop)%>%
   as_tibble()%>%
   kable()
 ```
 
-| description                                  |    n|  prop|
-|:---------------------------------------------|----:|-----:|
-| green&gt;moose&gt;wolf, green&gt;caribou, ha |   10|   2.1|
-| green&gt;moose&gt;wolf, ha&gt;caribou        |    1|   0.2|
-| green&gt;moose&gt;wolf&gt;caribou, ha        |  457|  97.6|
+| description                                                    |  prop|
+|:---------------------------------------------------------------|-----:|
+| green&gt;moose&gt;wolf&gt;caribou, ha                          |  80.5|
+| green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf                  |  12.9|
+| green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou               |   5.2|
+| green&gt;moose&gt;wolf, green&gt;caribou, moose&gt;caribou, ha |   1.1|
+| green&gt;moose&gt;wolf, green&gt;caribou, ha                   |   0.4|
 
 Plot paths
 ----------
@@ -741,15 +523,15 @@ dag.dat<- dag.dat%>%
   
 
 
-g <- graph_from_data_frame(dag.dat[1:1000,], vertices = c("vegetation", "moose", "wolf", "caribou", "habitat alteration"))
-from <- match(dag.dat[1:1000,]$from, c("vegetation", "moose", "wolf", "caribou"))
-to <- match(dag.dat[1:1000,]$to, c("vegetation", "moose", "wolf", "caribou"))
+g <- graph_from_data_frame(dag.dat[1:nrow(mod.sel.compile),], vertices = c("vegetation", "moose", "wolf", "caribou", "habitat alteration"))
+from <- match(dag.dat[1:nrow(mod.sel.compile),]$from, c("vegetation", "moose", "wolf", "caribou"))
+to <- match(dag.dat[1:nrow(mod.sel.compile),]$to, c("vegetation", "moose", "wolf", "caribou"))
 manual_layout <- create_layout(graph = g,
                                layout = "manual", node.positions = data.frame(x = c(0, 0.2, 0.8,1,0.9),
                                                                               y = c(0, 0.45, 0.55,1,0.2)))
 set_graph_style(plot_margin = margin(1,1,1,1))
 a <- ggraph(manual_layout) + 
-  geom_conn_bundle(data = get_con(from = from, to = to), alpha = 0.03, tension=0.9, 
+  geom_conn_bundle(data = get_con(from = from, to = to), alpha = 0.007, tension=0.9, 
                    position=position_jitter(width = 0.03, height = 0.03),
                    n=2) + 
   coord_fixed()+
@@ -774,7 +556,7 @@ m1a <- lm(Moose.Density~LAI, data=df%>%mutate(LAI=(LAI-min(LAI))/(max(LAI)-min(L
 summary(m1a)$r.squared
 ```
 
-    ## [1] 0.5115998
+    ## [1] 0.5128175
 
 ``` r
 m1b <- lm(WolfDensit~Moose.Density, data=df%>%mutate(LAI=(LAI-min(LAI))/(max(LAI)-min(LAI)),
@@ -785,7 +567,7 @@ m1b <- lm(WolfDensit~Moose.Density, data=df%>%mutate(LAI=(LAI-min(LAI))/(max(LAI
 summary(m1b)$r.squared
 ```
 
-    ## [1] 0.7801225
+    ## [1] 0.7771916
 
 ``` r
 m1c <- lm(caribou.lambda~WolfDensit, data=df%>%mutate(LAI=(LAI-min(LAI))/(max(LAI)-min(LAI)),

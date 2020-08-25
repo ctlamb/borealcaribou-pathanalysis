@@ -15,6 +15,7 @@ library(raster)
 library(sf)
 library(mapview)
 library(here)
+library(lme4)
 library(tidyverse)
 
 ##load cutblocks
@@ -86,15 +87,17 @@ df <- cbind(as.data.frame(cb.year),a)%>%
 ```
 
 
-##Plot
+##Plot Raw Data
 ```{r plot, results='hide', message=FALSE, warning=FALSE}
 precut <- df%>%
+  drop_na(time)%>%
   ungroup()%>%
-  filter(time<=-1)%>%
+  filter(time%in%c(-10:-1))%>%
   group_by(ID)%>%
   summarise(baseline=mean(dvi, na.rm=TRUE))
   
 contrast <- df%>%
+    drop_na(time)%>%
   left_join(precut, by="ID")%>%
   drop_na(baseline)%>%
   ungroup()%>%
@@ -104,15 +107,10 @@ contrast <- df%>%
 
 
  contrast%>%
-   group_by(time, prov)%>%
-  summarise(change.sum=mean(change, na.rm=TRUE),
-            se=sqrt(sd(change, na.rm=TRUE)/n()))%>%
-  mutate(lower=change.sum-(se*1.96),
-         upper=change.sum+(se*1.96))%>%
-  filter(time>=-10 & time<17)%>%
-ggplot(aes(x=time, y=change.sum))+
+  filter(time>=-10 & time<18)%>%
+ggplot(aes(x=time, y=change))+
   geom_vline(xintercept = 0, linetype="dotted")+
-  geom_point(col="red")+
+  geom_point(col="red", alpha=0.01)+
   theme_bw()+
   xlab("time since cut (years)")+
   ylab("change from pre-cut dVI (%)")+
@@ -120,14 +118,72 @@ ggplot(aes(x=time, y=change.sum))+
  
  
  contrast%>%
-   group_by(time)%>%
-   summarise(change.sum=mean(change, na.rm=TRUE),
-             se=sqrt(sd(change, na.rm=TRUE)/n()),
-             lower=quantile(change, 0.33),
-             upper=quantile(change,0.66))%>%
-
    filter(time>=-10 & time<18)%>%
-   ggplot(aes(x=time, y=change.sum))+
+   ggplot(aes(x=time, y=change))+
+   geom_vline(xintercept = 0, linetype="dotted")+
+   geom_point(col="red", alpha=0.01)+
+   theme_bw()+
+   xlab("Time since cut (years)")+
+   ylab("Change from pre-cut vegetation index (%)")
+
+
+```
+
+##Test for significant effect post logging
+```{r mixed model, results='hide', message=FALSE, warning=FALSE}
+
+summary(contrast%>%
+  filter(time>=-10 & time<14)%>%
+  drop_na(time)%>%
+  lmer(dvi ~ as.factor(time) + (1|ID), data=.))
+
+
+plot_model( 
+contrast%>%
+  filter(time>=-10 & time<14)%>%
+  drop_na(time)%>%
+  lmer(dvi ~ as.factor(time) + (1|ID), data=.),
+  sort.est = TRUE,
+  title = "",
+type="pred",
+  axis.title=c("deltaVI"),
+ci.lvl=0.95
+)+theme_bw()+geom_hline(yintercept = 0, linetype="dotted")
+```
+
+
+##Bootstrap results for a time-specific plot
+```{r mixed model, results='hide', message=FALSE, warning=FALSE}
+boot.dat <- data.frame()
+for(i in 1:500){
+dat <-  contrast%>%
+  group_by(ID)%>%
+  sample_frac(1,replace = TRUE)%>%
+  filter(time>=-10 & time<14)%>%
+  drop_na(time)
+
+mod <- dat%>%
+  lmer(dvi ~ as.character(time) + (1|ID), data=.)
+
+dat$pred <-predict(mod)
+
+
+
+boot.dat <- dat%>%
+  group_by(time)%>%
+  summarise(av=mean(dvi,na.rm=TRUE))%>%
+  mutate(iter=i)%>%
+  rbind(boot.dat)
+}
+
+
+
+boot.dat%>%
+   group_by(time)%>%
+   summarise(mean=mean(av, na.rm=TRUE),
+             lower=quantile(av, 0.05),
+             upper=quantile(av,0.95))%>%
+   ggplot(aes(x=time, y=mean))+
    geom_vline(xintercept = 0, linetype="dotted")+
    geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=0.2)+
    geom_point(col="red")+
@@ -135,7 +191,33 @@ ggplot(aes(x=time, y=change.sum))+
    xlab("Time since cut (years)")+
    ylab("Change from pre-cut vegetation index (%)")
 
- ggsave(here::here("time_since.png"),width=6, height=4)
+
+precut.boot <- boot.dat%>%
+  ungroup()%>%
+  filter(time%in%c(-10:-1))%>%
+  group_by(iter)%>%
+  summarise(baseline=mean(av, na.rm=TRUE))
+  
+contrast.boot <- boot.dat%>%
+  ungroup()%>%
+  left_join(precut.boot, by="iter")%>%
+  mutate(change=((av-baseline)/baseline)*100)
+
+  
+   contrast.boot%>%
+     group_by(time)%>%
+   summarise(mean=mean(change, na.rm=TRUE),
+             lower=quantile(change, 0.05),
+             upper=quantile(change,0.95))%>%
+   ggplot(aes(x=time, y=mean))+
+   geom_vline(xintercept = 0, linetype="dotted")+
+   geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=0.2)+
+   geom_point(col="red")+
+   theme_bw()+
+   xlab("Time since cut (years)")+
+   ylab("Change from pre-cut vegetation index (%)")
+   
+    ggsave(here::here("time_since_modelled.png"),width=6, height=4)
+
+
 ```
-
-

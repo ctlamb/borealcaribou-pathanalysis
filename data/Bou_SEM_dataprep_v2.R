@@ -4,6 +4,7 @@ library(readxl)
 library(psych)
 library(raster)
 library(stringr)
+library(lwgeom)
 library(tidyverse)
 
 ####################
@@ -274,32 +275,78 @@ can <- read_sf(here::here("canada", "canada.shp"))%>%
   st_transform("+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")
 
 bor<-read_sf(here::here("boreal", "NABoreal.shp"))%>%
+  st_make_valid()%>%
   st_transform("+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")%>%
   filter(TYPE%in%"BOREAL")%>%
   group_by(TYPE) %>% 
   summarise(m = sum(HA)) %>% 
   st_cast()
 
-bor<-rmapshaper::ms_simplify(input = as(bor, 'Spatial')) %>%
-  st_as_sf()
+bor<-rmapshaper::ms_simplify(input = as(bor, 'Spatial'))
+
+
+bor <- read_sf(here::here("terr-ecoregions-TNC", "tnc_terr_ecoregions.shp"))%>%
+  filter(WWF_MHTNAM%in%"Boreal Forests/Taiga")%>%
+  st_as_sf()%>%
+  st_transform("+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")%>%
+  group_by() %>% 
+  summarise() %>% 
+  st_cast()
+
+
+
+library("rworldmap")
+world <- getMap(resolution = "high")
+world <- st_as_sf(world)
+##prep extents
+extent = matrix(c(-2.4E6 ,0.8E6 , -2.4E6 , 2.9E6 , 0.2E6  , 2.9E6, 0.2E6 ,0.8E6 , -2.4E6 ,0.8E6 ),ncol=2, byrow=TRUE)
+pts = list(extent)
+pl1 = st_polygon(pts)
+pl1 <- st_sfc(pl1, crs="+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs")%>%
+  st_transform("+proj=laea +lat_0=40 +lon_0=-100 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs")
+
+inset <- ggplot() +
+  geom_sf(data = world) +
+  geom_sf(data = pl1, fill=NA, color="red") +
+  geom_sf(data=bor%>%st_transform("+proj=laea +lat_0=52 +lon_0=-100 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs "), fill="forestgreen", col=NA, alpha=0.6)+
+  coord_sf(crs = "+proj=laea +lat_0=40 +lon_0=-100 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs")+
+  theme(panel.grid.major = element_line(colour = gray(0.5), linetype = "dashed", size = 0.5),
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        panel.border = element_rect(fill = NA, color = NA),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        plot.margin=unit(c(0,0,0,0),"mm"),
+        legend.position = c(0.65,0.075),
+        plot.background = element_rect(fill = "transparent",colour = NA),
+        legend.background = element_blank())
+
+
+
 
 ggplot() +
   geom_sf(data = us, fill ="grey95") +
   geom_sf(data = can, fill ="grey95") +
-  geom_sf(data=bor, fill="forestgreen", col=NA, alpha=0.6)+
+  geom_sf(data=bor, fill="forestgreen", col=NA, alpha=0.2)+
   geom_sf(data=wf%>%filter(Name!="Tweedsmuir")%>%left_join(disturb, by="Name"), aes(fill=disturb.p), color="black")+
   scale_fill_viridis_c(guide = guide_colourbar(direction = "horizontal"),
                        name = "habitat alteration (%)")+
-  coord_sf(xlim =c(-2.4E6,0.2E6), ylim = c(0.8E6, 2.9E6),
+  coord_sf(xlim =c(-2.6E6,0.2E6), ylim = c(0.8E6, 2.9E6),
            crs="+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs") +
-  theme(panel.grid.major = element_line(colour = gray(0.5), linetype = "dashed", 
-                                        size = 0.5), panel.background = element_rect(fill = "aliceblue"), 
+  theme(panel.grid.major = element_blank(),
+      panel.background = element_rect(fill = "aliceblue"), 
         panel.border = element_rect(fill = NA),
         axis.text = element_blank(),
         axis.title = element_blank(),
         plot.margin=unit(c(0,0,0,0),"mm"),
         legend.position = c(0.65,0.075),
         legend.background = element_blank())+
-  annotation_scale(location = "bl", width_hint = 0.25)
+  annotation_scale(location = "bl", width_hint = 0.25)+
+  annotation_custom(ggplotGrob(inset), xmin =-3E6, xmax = -1.8E6, ymin = 0.8E6, ymax = 1.5E6)
+
+
 
 ggsave("/Users/clayton.lamb/Google Drive/Documents/University/Work/Serrouya_BouPathway/plots/map.png", width=5, height=4, units="in")
+
+
+library(mapview)
+mapview(bor)
