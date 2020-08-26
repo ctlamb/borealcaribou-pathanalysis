@@ -16,6 +16,7 @@ library(sf)
 library(mapview)
 library(here)
 library(lme4)
+library(sjPlot)
 library(tidyverse)
 
 ##load cutblocks
@@ -130,30 +131,47 @@ ggplot(aes(x=time, y=change))+
 ```
 
 ##Test for significant effect post logging
-```{r mixed model, results='hide', message=FALSE, warning=FALSE}
+```{r mixed model,  message=FALSE, warning=FALSE}
 
-summary(contrast%>%
-  filter(time>=-10 & time<14)%>%
-  drop_na(time)%>%
-  lmer(dvi ~ as.factor(time) + (1|ID), data=.))
+##prep data
+model.data <-
+  contrast%>%
+  mutate(period=case_when(time<0~"Pre",
+                          time>0~"Post"))%>%
+  mutate(period=fct_relevel(period, "Pre", "Post"))%>%
+  drop_na(period, time)
 
+##run model with dVI values
+m1 <- lmer(dvi ~ period + (1|ID), data=model.data)
+summary(m1)
 
-plot_model( 
-contrast%>%
-  filter(time>=-10 & time<14)%>%
-  drop_na(time)%>%
-  lmer(dvi ~ as.factor(time) + (1|ID), data=.),
+##plot model
+plot_model(m1,
   sort.est = TRUE,
   title = "",
 type="pred",
   axis.title=c("deltaVI"),
-ci.lvl=0.95
-)+theme_bw()+geom_hline(yintercept = 0, linetype="dotted")
+ci.lvl=0.95)
+
+model.data%>%
+  group_by(period)%>%
+  summarise(mean(dvi))
+
+##using the change
+m2 <- lmer(change ~ period + (1|ID), data=model.data)
+summary(m2)
+
+plot_model(m2,
+  sort.est = TRUE,
+  title = "",
+type="pred",
+  axis.title=c(" % change in deltaVI"),
+ci.lvl=0.95)
 ```
 
 
 ##Bootstrap results for a time-specific plot
-```{r mixed model, results='hide', message=FALSE, warning=FALSE}
+```{r bootstrap, results='hide', message=FALSE, warning=FALSE}
 boot.dat <- data.frame()
 for(i in 1:500){
 dat <-  contrast%>%

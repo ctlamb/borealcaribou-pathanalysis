@@ -1,7 +1,7 @@
 Caribou Path Analysis
 ================
 Clayton T. Lamb
-25 August, 2020
+26 August, 2020
 
 Load Data, Functions and Cleanup Data
 -------------------------------------
@@ -279,13 +279,13 @@ modelB <- psem(lm(Moose.Density ~ LAI, df),
 
 modelC <- psem(lm(Moose.Density ~ LAI, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ Moose.Density+LAI, df),
-               lm(LAI~disturb.p, df))
+               lm(caribou.lambda ~ Moose.Density+LAI, df))%>%
+  update(disturb.p ~ 1)
 
 modelD <- psem(lm(Moose.Density ~ LAI, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ WolfDensit, df),
-               lm(LAI~disturb.p, df))
+               lm(caribou.lambda ~ WolfDensit, df))%>%
+  update(disturb.p ~ 1)
 
 modelE <- psem(lm(Moose.Density ~ LAI, df),
                lm(WolfDensit ~ Moose.Density, df),
@@ -293,8 +293,8 @@ modelE <- psem(lm(Moose.Density ~ LAI, df),
 
 modelF <- psem(lm(Moose.Density ~ LAI, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ LAI, df),
-               lm(LAI~disturb.p, df))
+               lm(caribou.lambda ~ LAI, df))%>%
+  update(disturb.p ~ 1)
 
 
 
@@ -330,20 +330,117 @@ data.frame(model=c("A","B","C","D","E","F"),
   kable()
 ```
 
-| model | description                                                    |      p|    K|     AICc|   dAICc|
-|:------|:---------------------------------------------------------------|------:|----:|--------:|-------:|
-| F     | green&gt;moose&gt;wolf, green&gt;caribou, ha                   |  0.012|   12|  -596.69|    0.00|
-| D     | green&gt;moose&gt;wolf&gt;caribou, ha                          |  0.509|   12|  -422.88|  173.81|
-| C     | green&gt;moose&gt;wolf, green&gt;caribou, moose&gt;caribou, ha |  0.035|   13|  -272.50|  324.19|
-| A     | green&gt;moose&gt;wolf, ha&gt;caribou                          |  0.033|    9|   242.30|  838.99|
-| E     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou               |  0.516|   10|   350.05|  946.74|
-| B     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf                  |  0.336|   10|   375.44|  972.13|
+| model | description                                                    |      p|    K|    AICc|   dAICc|
+|:------|:---------------------------------------------------------------|------:|----:|-------:|-------:|
+| D     | green&gt;moose&gt;wolf&gt;caribou, ha                          |  0.506|    9|  175.64|    0.00|
+| A     | green&gt;moose&gt;wolf, ha&gt;caribou                          |  0.033|    9|  242.30|   66.66|
+| F     | green&gt;moose&gt;wolf, green&gt;caribou, ha                   |  0.014|    9|  259.26|   83.62|
+| E     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou               |  0.516|   10|  350.05|  174.41|
+| B     | green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf                  |  0.336|   10|  375.44|  199.80|
+| C     | green&gt;moose&gt;wolf, green&gt;caribou, moose&gt;caribou, ha |  0.042|   10|  466.84|  291.20|
 
 ``` r
 ###Is there another path (F), that was excluded but was maybe statistically important?
 #lm(caribou.lambda~ disturb.p + WolfDensit, data=df)%>%summary() 
 ##no, wolf density remains significantly negative (p=0.0006), disturb.p has no effect (p=0.58)
+
+##final model selection table with p<0.05 removed
+aic.tab <- data.frame(model=c("A","B","C","D","E","F"),
+                      description=c(mA,mB,mC,mD,mE,mF),
+                      p=round(c(summary(modelA, .progressBar = F)$Cstat$P.Value,
+                           summary(modelB, .progressBar = F)$Cstat$P.Value,
+                           summary(modelC, .progressBar = F)$Cstat$P.Value,
+                           summary(modelD, .progressBar = F)$Cstat$P.Value,
+                           summary(modelE, .progressBar = F)$Cstat$P.Value,
+                           summary(modelF, .progressBar = F)$Cstat$P.Value
+                           ),3),
+                      K=c(summary(modelA, .progressBar = F)$IC$K,
+                           summary(modelB, .progressBar = F)$IC$K,
+                           summary(modelC, .progressBar = F)$IC$K,
+                           summary(modelD, .progressBar = F)$IC$K,
+                           summary(modelE, .progressBar = F)$IC$K,
+                           summary(modelF, .progressBar = F)$IC$K
+                           ),
+                      AICc=round(c(summary(modelA, .progressBar = F)$IC$AICc,
+                           summary(modelB, .progressBar = F)$IC$AICc,
+                           summary(modelC, .progressBar = F)$IC$AICc,
+                           summary(modelD, .progressBar = F)$IC$AICc,
+                           summary(modelE, .progressBar = F)$IC$AICc,
+                           summary(modelF, .progressBar = F)$IC$AICc
+                           ),2))%>%
+  filter(p>0.05)%>%
+  mutate(dAICc=AICc-min(AICc))%>%
+  arrange(dAICc)%>%
+  as_tibble()
+
+aic.tab%>%
+  write_csv(here::here("tables","aicc.csv"))
+
+aic.tab%>%
+  kable()
 ```
+
+| model      | description                                      |      p|    K|    AICc|   dAICc|
+|:-----------|:-------------------------------------------------|------:|----:|-------:|-------:|
+| D          | green&gt;moose&gt;wolf&gt;caribou, ha            |  0.506|    9|  175.64|    0.00|
+| E          | green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou |  0.516|   10|  350.05|  174.41|
+| B          | green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf    |  0.336|   10|  375.44|  199.80|
+| \#\#calc A | IC by hand                                       |       |     |        |        |
+
+``` r
+##calc by hand
+##can't quite replicate the above #'s (but close) will email package developer
+
+###D
+m <-summary(modelD, .progressBar = F)
+m$Cstat$Fisher.C
+```
+
+    ## [1] 11.273
+
+``` r
+m$IC$K
+```
+
+    ## [1] 9
+
+``` r
+m$IC$n
+```
+
+    ## [1] 12
+
+``` r
+m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
+```
+
+    ## [1] 119.273
+
+``` r
+###E
+m <-summary(modelE, .progressBar = F)
+m$Cstat$Fisher.C
+```
+
+    ## [1] 9.171
+
+``` r
+m$IC$K
+```
+
+    ## [1] 10
+
+``` r
+m$IC$n
+```
+
+    ## [1] 12
+
+``` r
+m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
+```
+
+    ## [1] 249.171
 
 bootstrap D-Separation analysis
 -------------------------------
@@ -458,8 +555,10 @@ Plot paths
 
 ``` r
 dag.dat <- data.frame()
-for(i in 1:nrow(mod.sel.compile)){
-  a <- mod.sel.compile[i,]
+mod.sel.compile.path <- mod.sel.compile%>%
+  filter(dAICc==0 & p>0.05)
+for(i in 1:nrow(mod.sel.compile.path)){
+  a <- mod.sel.compile.path[i,]
   
   if(a$description %in% mA){
     b <- data.frame(from=c("green","moose","habitat alteration"),
@@ -531,7 +630,7 @@ manual_layout <- create_layout(graph = g,
                                                                               y = c(0, 0.45, 0.55,1,0.2)))
 set_graph_style(plot_margin = margin(1,1,1,1))
 a <- ggraph(manual_layout) + 
-  geom_conn_bundle(data = get_con(from = from, to = to), alpha = 0.007, tension=0.9, 
+  geom_conn_bundle(data = get_con(from = from, to = to), alpha = 0.03, tension=0.9, 
                    position=position_jitter(width = 0.03, height = 0.03),
                    n=2) + 
   coord_fixed()+

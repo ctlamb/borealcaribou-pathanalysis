@@ -1,7 +1,7 @@
 Caribou Path Analysis--Add reviewer suggested paths for appendix
 ================
 Clayton T. Lamb
-25 August, 2020
+26 August, 2020
 
 Load Data, Functions and Cleanup Data
 -------------------------------------
@@ -343,7 +343,107 @@ data.frame(model=c("A","B","C","D","E","F"),
 ###Is there another path (F), that was excluded but was maybe statistically important?
 #lm(caribou.lambda~ disturb.p + WolfDensit, data=df)%>%summary() 
 ##no, wolf density remains significantly negative (p=0.0006), disturb.p has no effect (p=0.58)
+
+
+
+##final model selection table with p<0.05 removed
+aic.tab <- data.frame(model=c("A","B","C","D","E","F"),
+                      description=c(mA,mB,mC,mD,mE,mF),
+                      p=round(c(summary(modelA, .progressBar = F)$Cstat$P.Value,
+                           summary(modelB, .progressBar = F)$Cstat$P.Value,
+                           summary(modelC, .progressBar = F)$Cstat$P.Value,
+                           summary(modelD, .progressBar = F)$Cstat$P.Value,
+                           summary(modelE, .progressBar = F)$Cstat$P.Value,
+                           summary(modelF, .progressBar = F)$Cstat$P.Value
+                           ),3),
+                      K=c(summary(modelA, .progressBar = F)$IC$K,
+                           summary(modelB, .progressBar = F)$IC$K,
+                           summary(modelC, .progressBar = F)$IC$K,
+                           summary(modelD, .progressBar = F)$IC$K,
+                           summary(modelE, .progressBar = F)$IC$K,
+                           summary(modelF, .progressBar = F)$IC$K
+                           ),
+                      AICc=round(c(summary(modelA, .progressBar = F)$IC$AICc,
+                           summary(modelB, .progressBar = F)$IC$AICc,
+                           summary(modelC, .progressBar = F)$IC$AICc,
+                           summary(modelD, .progressBar = F)$IC$AICc,
+                           summary(modelE, .progressBar = F)$IC$AICc,
+                           summary(modelF, .progressBar = F)$IC$AICc
+                           ),2))%>%
+  filter(p>0.05)%>%
+  mutate(dAICc=AICc-min(AICc))%>%
+  arrange(dAICc)%>%
+  as_tibble()
+
+aic.tab%>%
+  write_csv(here::here("tables","aicc.csv"))
+
+aic.tab%>%
+  kable()
 ```
+
+| model      | description                                      |      p|    K|     AICc|   dAICc|
+|:-----------|:-------------------------------------------------|------:|----:|--------:|-------:|
+| D          | ha&gt;green&gt;moose&gt;wolf&gt;caribou          |  0.509|   12|  -422.88|    0.00|
+| E          | green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou |  0.516|   10|   350.05|  772.93|
+| B          | green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf    |  0.336|   10|   375.44|  798.32|
+| \#\#calc A | ICc by hand                                      |       |     |         |        |
+
+``` r
+##calc by hand
+
+###D
+m <-summary(modelD, .progressBar = F)
+m$Cstat$Fisher.C
+```
+
+    ## [1] 11.24
+
+``` r
+m$IC$K
+```
+
+    ## [1] 12
+
+``` r
+m$IC$n
+```
+
+    ## [1] 12
+
+``` r
+m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
+```
+
+    ## [1] -276.76
+
+``` r
+###there's an issue here, where n<K, and thus creates a negative sign and makes the AICc arificially MUCH lower.
+
+###E
+m <-summary(modelE, .progressBar = F)
+m$Cstat$Fisher.C
+```
+
+    ## [1] 9.171
+
+``` r
+m$IC$K
+```
+
+    ## [1] 10
+
+``` r
+m$IC$n
+```
+
+    ## [1] 12
+
+``` r
+m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
+```
+
+    ## [1] 249.171
 
 bootstrap D-Separation analysis
 -------------------------------

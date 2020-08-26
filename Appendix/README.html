@@ -27,7 +27,7 @@ body {
 
 <h1 id="caribou-path-analysis--add-reviewer-suggested-paths-for-appendix">Caribou Path Analysis--Add reviewer suggested paths for appendix</h1>
 <p>Clayton T. Lamb<br />
-25 August, 2020</p>
+26 August, 2020</p>
 <h2 id="load-data-functions-and-cleanup-data">Load Data, Functions and Cleanup Data</h2>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">##packages
 <span class="kw">library</span>(here)
@@ -355,7 +355,114 @@ modelF &lt;-<span class="st"> </span><span class="kw">psem</span>(<span class="k
 </table>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">###Is there another path (F), that was excluded but was maybe statistically important?
 <span class="co">#lm(caribou.lambda~ disturb.p + WolfDensit, data=df)%&gt;%summary() </span>
-##no, wolf density remains significantly negative (p=0.0006), disturb.p has no effect (p=0.58)</code></pre></div>
+##no, wolf density remains significantly negative (p=0.0006), disturb.p has no effect (p=0.58)
+
+
+
+##final model selection table with p&lt;0.05 removed
+aic.tab &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">model=</span><span class="kw">c</span>(<span class="st">&quot;A&quot;</span>,<span class="st">&quot;B&quot;</span>,<span class="st">&quot;C&quot;</span>,<span class="st">&quot;D&quot;</span>,<span class="st">&quot;E&quot;</span>,<span class="st">&quot;F&quot;</span>),
+                      <span class="dt">description=</span><span class="kw">c</span>(mA,mB,mC,mD,mE,mF),
+                      <span class="dt">p=</span><span class="kw">round</span>(<span class="kw">c</span>(<span class="kw">summary</span>(modelA, <span class="dt">.progressBar =</span> F)<span class="op">$</span>Cstat<span class="op">$</span>P.Value,
+                           <span class="kw">summary</span>(modelB, <span class="dt">.progressBar =</span> F)<span class="op">$</span>Cstat<span class="op">$</span>P.Value,
+                           <span class="kw">summary</span>(modelC, <span class="dt">.progressBar =</span> F)<span class="op">$</span>Cstat<span class="op">$</span>P.Value,
+                           <span class="kw">summary</span>(modelD, <span class="dt">.progressBar =</span> F)<span class="op">$</span>Cstat<span class="op">$</span>P.Value,
+                           <span class="kw">summary</span>(modelE, <span class="dt">.progressBar =</span> F)<span class="op">$</span>Cstat<span class="op">$</span>P.Value,
+                           <span class="kw">summary</span>(modelF, <span class="dt">.progressBar =</span> F)<span class="op">$</span>Cstat<span class="op">$</span>P.Value
+                           ),<span class="dv">3</span>),
+                      <span class="dt">K=</span><span class="kw">c</span>(<span class="kw">summary</span>(modelA, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>K,
+                           <span class="kw">summary</span>(modelB, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>K,
+                           <span class="kw">summary</span>(modelC, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>K,
+                           <span class="kw">summary</span>(modelD, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>K,
+                           <span class="kw">summary</span>(modelE, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>K,
+                           <span class="kw">summary</span>(modelF, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>K
+                           ),
+                      <span class="dt">AICc=</span><span class="kw">round</span>(<span class="kw">c</span>(<span class="kw">summary</span>(modelA, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>AICc,
+                           <span class="kw">summary</span>(modelB, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>AICc,
+                           <span class="kw">summary</span>(modelC, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>AICc,
+                           <span class="kw">summary</span>(modelD, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>AICc,
+                           <span class="kw">summary</span>(modelE, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>AICc,
+                           <span class="kw">summary</span>(modelF, <span class="dt">.progressBar =</span> F)<span class="op">$</span>IC<span class="op">$</span>AICc
+                           ),<span class="dv">2</span>))<span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">filter</span>(p<span class="op">&gt;</span><span class="fl">0.05</span>)<span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">dAICc=</span>AICc<span class="op">-</span><span class="kw">min</span>(AICc))<span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">arrange</span>(dAICc)<span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">as_tibble</span>()
+
+aic.tab<span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">write_csv</span>(here<span class="op">::</span><span class="kw">here</span>(<span class="st">&quot;tables&quot;</span>,<span class="st">&quot;aicc.csv&quot;</span>))
+
+aic.tab<span class="op">%&gt;%</span>
+<span class="st">  </span><span class="kw">kable</span>()</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">model</th>
+<th align="left">description</th>
+<th align="right">p</th>
+<th align="right">K</th>
+<th align="right">AICc</th>
+<th align="right">dAICc</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">D</td>
+<td align="left">ha&gt;green&gt;moose&gt;wolf&gt;caribou</td>
+<td align="right">0.509</td>
+<td align="right">12</td>
+<td align="right">-422.88</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">E</td>
+<td align="left">green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou</td>
+<td align="right">0.516</td>
+<td align="right">10</td>
+<td align="right">350.05</td>
+<td align="right">772.93</td>
+</tr>
+<tr class="odd">
+<td align="left">B</td>
+<td align="left">green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf</td>
+<td align="right">0.336</td>
+<td align="right">10</td>
+<td align="right">375.44</td>
+<td align="right">798.32</td>
+</tr>
+<tr class="even">
+<td align="left">##calc A</td>
+<td align="left">ICc by hand</td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">##calc by hand
+
+###D
+m &lt;-<span class="kw">summary</span>(modelD, <span class="dt">.progressBar =</span> F)
+m<span class="op">$</span>Cstat<span class="op">$</span>Fisher.C</code></pre></div>
+<pre><code>## [1] 11.24</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m<span class="op">$</span>IC<span class="op">$</span>K</code></pre></div>
+<pre><code>## [1] 12</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m<span class="op">$</span>IC<span class="op">$</span>n</code></pre></div>
+<pre><code>## [1] 12</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m<span class="op">$</span>Cstat<span class="op">$</span>Fisher.C<span class="op">+</span><span class="st"> </span>((<span class="dv">2</span><span class="op">*</span>m<span class="op">$</span>IC<span class="op">$</span>K)<span class="op">*</span>(m<span class="op">$</span>IC<span class="op">$</span>n<span class="op">/</span>(m<span class="op">$</span>IC<span class="op">$</span>n<span class="op">-</span>m<span class="op">$</span>IC<span class="op">$</span>K<span class="op">-</span><span class="dv">1</span>)))</code></pre></div>
+<pre><code>## [1] -276.76</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">###there's an issue here, where n&lt;K, and thus creates a negative sign and makes the AICc arificially MUCH lower.
+
+###E
+m &lt;-<span class="kw">summary</span>(modelE, <span class="dt">.progressBar =</span> F)
+m<span class="op">$</span>Cstat<span class="op">$</span>Fisher.C</code></pre></div>
+<pre><code>## [1] 9.171</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m<span class="op">$</span>IC<span class="op">$</span>K</code></pre></div>
+<pre><code>## [1] 10</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m<span class="op">$</span>IC<span class="op">$</span>n</code></pre></div>
+<pre><code>## [1] 12</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m<span class="op">$</span>Cstat<span class="op">$</span>Fisher.C<span class="op">+</span><span class="st"> </span>((<span class="dv">2</span><span class="op">*</span>m<span class="op">$</span>IC<span class="op">$</span>K)<span class="op">*</span>(m<span class="op">$</span>IC<span class="op">$</span>n<span class="op">/</span>(m<span class="op">$</span>IC<span class="op">$</span>n<span class="op">-</span>m<span class="op">$</span>IC<span class="op">$</span>K<span class="op">-</span><span class="dv">1</span>)))</code></pre></div>
+<pre><code>## [1] 249.171</code></pre>
 <h2 id="bootstrap-d-separation-analysis">bootstrap D-Separation analysis</h2>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">####DSEP boot
 mod.sel.compile.raw &lt;-<span class="st"> </span><span class="kw">data.frame</span>()

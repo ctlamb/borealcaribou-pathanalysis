@@ -1,5 +1,5 @@
 Clayton T. Lamb
-06 May, 2020
+26 August, 2020
 
 Load Data, Functions and Cleanup Data
 -------------------------------------
@@ -9,6 +9,8 @@ library(raster)
 library(sf)
 library(mapview)
 library(here)
+library(lme4)
+library(sjPlot)
 library(tidyverse)
 
 ##load cutblocks
@@ -121,17 +123,19 @@ df <- cbind(as.data.frame(cb.year),a)%>%
   mutate(time=year-HARVEST_YE)
 ```
 
-Plot
-----
+Plot Raw Data
+-------------
 
 ``` r
 precut <- df%>%
+  drop_na(time)%>%
   ungroup()%>%
-  filter(time<=-1)%>%
+  filter(time%in%c(-10:-1))%>%
   group_by(ID)%>%
   summarise(baseline=mean(dvi, na.rm=TRUE))
   
 contrast <- df%>%
+    drop_na(time)%>%
   left_join(precut, by="ID")%>%
   drop_na(baseline)%>%
   ungroup()%>%
@@ -141,15 +145,10 @@ contrast <- df%>%
 
 
  contrast%>%
-   group_by(time, prov)%>%
-  summarise(change.sum=mean(change, na.rm=TRUE),
-            se=sqrt(sd(change, na.rm=TRUE)/n()))%>%
-  mutate(lower=change.sum-(se*1.96),
-         upper=change.sum+(se*1.96))%>%
-  filter(time>=-10 & time<17)%>%
-ggplot(aes(x=time, y=change.sum))+
+  filter(time>=-10 & time<18)%>%
+ggplot(aes(x=time, y=change))+
   geom_vline(xintercept = 0, linetype="dotted")+
-  geom_point(col="red")+
+  geom_point(col="red", alpha=0.01)+
   theme_bw()+
   xlab("time since cut (years)")+
   ylab("change from pre-cut dVI (%)")+
@@ -160,14 +159,155 @@ ggplot(aes(x=time, y=change.sum))+
 
 ``` r
  contrast%>%
-   group_by(time)%>%
-   summarise(change.sum=mean(change, na.rm=TRUE),
-             se=sqrt(sd(change, na.rm=TRUE)/n()),
-             lower=quantile(change, 0.33),
-             upper=quantile(change,0.66))%>%
-
    filter(time>=-10 & time<18)%>%
-   ggplot(aes(x=time, y=change.sum))+
+   ggplot(aes(x=time, y=change))+
+   geom_vline(xintercept = 0, linetype="dotted")+
+   geom_point(col="red", alpha=0.01)+
+   theme_bw()+
+   xlab("Time since cut (years)")+
+   ylab("Change from pre-cut vegetation index (%)")
+```
+
+![](README_files/figure-markdown_github/plot-2.png)
+
+Test for significant effect post logging
+----------------------------------------
+
+``` r
+##prep data
+model.data <-
+  contrast%>%
+  mutate(period=case_when(time<0~"Pre",
+                          time>0~"Post"))%>%
+  mutate(period=fct_relevel(period, "Pre", "Post"))%>%
+  drop_na(period, time)
+
+##run model with dVI values
+m1 <- lmer(dvi ~ period + (1|ID), data=model.data)
+summary(m1)
+```
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: dvi ~ period + (1 | ID)
+    ##    Data: model.data
+    ## 
+    ## REML criterion at convergence: 863512
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -5.8448 -0.5884  0.0040  0.6068  5.4604 
+    ## 
+    ## Random effects:
+    ##  Groups   Name        Variance Std.Dev.
+    ##  ID       (Intercept) 242069   492.0   
+    ##  Residual             237661   487.5   
+    ## Number of obs: 56164, groups:  ID, 2956
+    ## 
+    ## Fixed effects:
+    ##             Estimate Std. Error t value
+    ## (Intercept) 1889.062      9.610  196.57
+    ## periodPost   359.517      4.612   77.95
+    ## 
+    ## Correlation of Fixed Effects:
+    ##            (Intr)
+    ## periodPost -0.260
+
+``` r
+##plot model
+plot_model(m1,
+  sort.est = TRUE,
+  title = "",
+type="pred",
+  axis.title=c("deltaVI"),
+ci.lvl=0.95)
+```
+
+    ## $period
+
+![](README_files/figure-markdown_github/mixed%20model-1.png)
+
+``` r
+model.data%>%
+  group_by(period)%>%
+  summarise(mean(dvi))
+
+##using the change
+m2 <- lmer(change ~ period + (1|ID), data=model.data)
+summary(m2)
+```
+
+    ## Linear mixed model fit by REML ['lmerMod']
+    ## Formula: change ~ period + (1 | ID)
+    ##    Data: model.data
+    ## 
+    ## REML criterion at convergence: 543106.9
+    ## 
+    ## Scaled residuals: 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -8.1880 -0.5746 -0.0070  0.5841  6.4688 
+    ## 
+    ## Random effects:
+    ##  Groups   Name        Variance Std.Dev.
+    ##  ID       (Intercept) 299.6    17.31   
+    ##  Residual             831.9    28.84   
+    ## Number of obs: 56164, groups:  ID, 2956
+    ## 
+    ## Fixed effects:
+    ##             Estimate Std. Error t value
+    ## (Intercept)   1.6182     0.3708   4.364
+    ## periodPost   23.7137     0.2701  87.791
+    ## 
+    ## Correlation of Fixed Effects:
+    ##            (Intr)
+    ## periodPost -0.394
+
+``` r
+plot_model(m2,
+  sort.est = TRUE,
+  title = "",
+type="pred",
+  axis.title=c(" % change in deltaVI"),
+ci.lvl=0.95)
+```
+
+    ## $period
+
+![](README_files/figure-markdown_github/mixed%20model-2.png)
+
+Bootstrap results for a time-specific plot
+------------------------------------------
+
+``` r
+boot.dat <- data.frame()
+for(i in 1:500){
+dat <-  contrast%>%
+  group_by(ID)%>%
+  sample_frac(1,replace = TRUE)%>%
+  filter(time>=-10 & time<14)%>%
+  drop_na(time)
+
+mod <- dat%>%
+  lmer(dvi ~ as.character(time) + (1|ID), data=.)
+
+dat$pred <-predict(mod)
+
+
+
+boot.dat <- dat%>%
+  group_by(time)%>%
+  summarise(av=mean(dvi,na.rm=TRUE))%>%
+  mutate(iter=i)%>%
+  rbind(boot.dat)
+}
+
+
+
+boot.dat%>%
+   group_by(time)%>%
+   summarise(mean=mean(av, na.rm=TRUE),
+             lower=quantile(av, 0.05),
+             upper=quantile(av,0.95))%>%
+   ggplot(aes(x=time, y=mean))+
    geom_vline(xintercept = 0, linetype="dotted")+
    geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=0.2)+
    geom_point(col="red")+
@@ -176,8 +316,37 @@ ggplot(aes(x=time, y=change.sum))+
    ylab("Change from pre-cut vegetation index (%)")
 ```
 
-![](README_files/figure-markdown_github/plot-2.png)
+![](README_files/figure-markdown_github/bootstrap-1.png)
 
 ``` r
- ggsave(here::here("time_since.png"),width=6, height=4)
+precut.boot <- boot.dat%>%
+  ungroup()%>%
+  filter(time%in%c(-10:-1))%>%
+  group_by(iter)%>%
+  summarise(baseline=mean(av, na.rm=TRUE))
+  
+contrast.boot <- boot.dat%>%
+  ungroup()%>%
+  left_join(precut.boot, by="iter")%>%
+  mutate(change=((av-baseline)/baseline)*100)
+
+  
+   contrast.boot%>%
+     group_by(time)%>%
+   summarise(mean=mean(change, na.rm=TRUE),
+             lower=quantile(change, 0.05),
+             upper=quantile(change,0.95))%>%
+   ggplot(aes(x=time, y=mean))+
+   geom_vline(xintercept = 0, linetype="dotted")+
+   geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=0.2)+
+   geom_point(col="red")+
+   theme_bw()+
+   xlab("Time since cut (years)")+
+   ylab("Change from pre-cut vegetation index (%)")
+```
+
+![](README_files/figure-markdown_github/bootstrap-2.png)
+
+``` r
+    ggsave(here::here("time_since_modelled.png"),width=6, height=4)
 ```
