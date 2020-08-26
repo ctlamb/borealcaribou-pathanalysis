@@ -340,28 +340,28 @@ aic.tab%>%
 aic.tab%>%
   kable()
 ```
-##calc AIC by hand
+##calc AICc by hand
 ```{r by hand, message=FALSE, warning=FALSE}
 ##calc by hand
-##can't quite replicate the above #'s (but close) will email package developer
+##can fully replicate now after talking to package developer. all good.
 
 ###D
 m <-summary(modelD, .progressBar = F)
-m$Cstat$Fisher.C
-m$IC$K
-m$IC$n
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
 
-m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
+(C+ ((2*K)))*(n/(n-K-1))
 
 
 
 ###E
 m <-summary(modelE, .progressBar = F)
-m$Cstat$Fisher.C
-m$IC$K
-m$IC$n
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
 
-m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
+(C+ ((2*K)))*(n/(n-K-1))
 ```
 
 ##bootstrap D-Separation analysis

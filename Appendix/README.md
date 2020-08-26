@@ -391,59 +391,42 @@ aic.tab%>%
 
 ``` r
 ##calc by hand
+###there's an issue here, where n<K, and thus creates a negative sign and makes the AICc arificially MUCH lower. Which is an issue because it makes models with MORE parameters MORE negative, and thus lower AICc. 
 
 ###D
 m <-summary(modelD, .progressBar = F)
-m$Cstat$Fisher.C
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
+
+(C+ ((2*K)))*(n/(n-K-1))
 ```
 
-    ## [1] 11.24
+    ## [1] -422.88
 
 ``` r
-m$IC$K
+n/(n-K-1) ##ends up negative, that's an issue. Model is over paramaterized
 ```
 
-    ## [1] 12
+    ## [1] -12
 
 ``` r
-m$IC$n
-```
-
-    ## [1] 12
-
-``` r
-m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
-```
-
-    ## [1] -276.76
-
-``` r
-###there's an issue here, where n<K, and thus creates a negative sign and makes the AICc arificially MUCH lower.
-
 ###E
 m <-summary(modelE, .progressBar = F)
-m$Cstat$Fisher.C
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
+
+(C+ ((2*K)))*(n/(n-K-1))
 ```
 
-    ## [1] 9.171
+    ## [1] 350.052
 
 ``` r
-m$IC$K
-```
-
-    ## [1] 10
-
-``` r
-m$IC$n
+n/(n-K-1) ##doesn't end up negative.
 ```
 
     ## [1] 12
-
-``` r
-m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
-```
-
-    ## [1] 249.171
 
 bootstrap D-Separation analysis
 -------------------------------

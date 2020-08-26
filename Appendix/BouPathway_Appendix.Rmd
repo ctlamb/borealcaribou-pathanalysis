@@ -345,24 +345,27 @@ aic.tab%>%
 ##calc AICc by hand
 ```{r by hand, message=FALSE, warning=FALSE}
 ##calc by hand
+###there's an issue here, where n<K, and thus creates a negative sign and makes the AICc arificially MUCH lower. Which is an issue because it makes models with MORE parameters MORE negative, and thus lower AICc. 
 
 ###D
 m <-summary(modelD, .progressBar = F)
-m$Cstat$Fisher.C
-m$IC$K
-m$IC$n
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
 
-m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
+(C+ ((2*K)))*(n/(n-K-1))
 
-###there's an issue here, where n<K, and thus creates a negative sign and makes the AICc arificially MUCH lower.
-
+n/(n-K-1) ##ends up negative, that's an issue. Model is over paramaterized
 ###E
 m <-summary(modelE, .progressBar = F)
-m$Cstat$Fisher.C
-m$IC$K
-m$IC$n
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
 
-m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
+(C+ ((2*K)))*(n/(n-K-1))
+
+
+n/(n-K-1) ##doesn't end up negative.
 ```
 
 

@@ -385,62 +385,34 @@ aic.tab%>%
 | D          | green&gt;moose&gt;wolf&gt;caribou, ha            |  0.506|    9|  175.64|    0.00|
 | E          | green&gt;moose&gt;wolf&gt;caribou, ha&gt;caribou |  0.516|   10|  350.05|  174.41|
 | B          | green&gt;moose&gt;wolf&gt;caribou, ha&gt;wolf    |  0.336|   10|  375.44|  199.80|
-| \#\#calc A | IC by hand                                       |       |     |        |        |
+| \#\#calc A | ICc by hand                                      |       |     |        |        |
 
 ``` r
 ##calc by hand
-##can't quite replicate the above #'s (but close) will email package developer
+##can fully replicate now after talking to package developer. all good.
 
 ###D
 m <-summary(modelD, .progressBar = F)
-m$Cstat$Fisher.C
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
+
+(C+ ((2*K)))*(n/(n-K-1))
 ```
 
-    ## [1] 11.273
-
-``` r
-m$IC$K
-```
-
-    ## [1] 9
-
-``` r
-m$IC$n
-```
-
-    ## [1] 12
-
-``` r
-m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
-```
-
-    ## [1] 119.273
+    ## [1] 175.638
 
 ``` r
 ###E
 m <-summary(modelE, .progressBar = F)
-m$Cstat$Fisher.C
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
+
+(C+ ((2*K)))*(n/(n-K-1))
 ```
 
-    ## [1] 9.171
-
-``` r
-m$IC$K
-```
-
-    ## [1] 10
-
-``` r
-m$IC$n
-```
-
-    ## [1] 12
-
-``` r
-m$Cstat$Fisher.C+ ((2*m$IC$K)*(m$IC$n/(m$IC$n-m$IC$K-1)))
-```
-
-    ## [1] 249.171
+    ## [1] 350.052
 
 bootstrap D-Separation analysis
 -------------------------------
