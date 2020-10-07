@@ -29,7 +29,8 @@ library(tidyverse)
 
 ##data
 df <- read.csv(here::here("data", "final.csv"))%>%
-  filter(Name!="Tweedsmuir") ##remove Tweedsmuir- non-boreal
+  filter(Name!="Tweedsmuir")%>% ##remove Tweedsmuir- non-boreal
+  rename(dVI=LAI)
 
 ##transform to instantaneous rate of growth (r)
 df$caribou.lambda <- log(df$lambda)
@@ -273,6 +274,33 @@ aic.tab%>%
 ```{r by hand, message=FALSE, warning=FALSE}
 ##calc by hand
 ###there's an issue here, where K is approaching n, AIC goes to INF.
+
+###A
+m <-summary(modelA, .progressBar = F)
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
+
+(C+ ((2*K)))*(n/(n-K-1))
+
+##works OK n=14, K=9
+n 
+K
+(n/(n-K-1))
+
+
+###D 
+m <-summary(modelD, .progressBar = F)
+C <- m$Cstat$Fisher.C
+K <- m$IC$K
+n <- m$IC$n
+
+(C+ ((2*K)))*(n/(n-K-1))
+
+##approaching over paramaterized, n=14, k=12, hit to AICc is huge.
+n 
+K
+(n/(n-K-1))
 
 ###C
 m <-summary(modelC, .progressBar = F)
