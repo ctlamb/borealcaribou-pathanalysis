@@ -1,0 +1,199 @@
+
+---
+title: "Caribou Path Analysis"
+author: "Clayton T. Lamb"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output: github_document
+---
+
+##Load Data, Functions and Cleanup Data
+```{r Load Data, results='hide', message=FALSE, warning=FALSE}
+##packages
+library(here)
+library(lavaan)
+library(semPlot)
+require(cowplot)
+library(corrplot)
+library(ggraph)
+library(igraph)
+library(QuantPsyc)
+library(ggpubr)
+library(MuMIn)
+library(knitr)
+library(piecewiseSEM)
+library(tidyverse)
+
+##data
+df <- read.csv(here::here("data", "final.csv"))%>%
+  filter(Name!="Tweedsmuir")%>% ##remove Tweedsmuir- non-boreal
+  rename(dVI=LAI)
+
+##transform to instantaneous rate of growth (r)
+df$caribou.lambda <- log(df$lambda)
+
+##set seed for any bootstrapping
+set.seed(2019)
+```
+
+
+
+
+##transformations to linear
+```{r Transform, message=FALSE, warning=FALSE}
+###transform caribou lambda
+df$caribou.lambda <--(exp(-10*df$caribou.lambda))
+
+##make sure the rest remain linear 
+a <- ggplot(df, aes(x=WolfDensit, y=caribou.lambda))+
+  geom_point()+
+  theme_bw()
+
+b <- ggplot(df, aes(x=Moose.Density, y=caribou.lambda))+
+  geom_point()+
+  theme_bw()
+
+c <- ggplot(df, aes(x=dVI, y=caribou.lambda))+
+  geom_point()+
+    xlab("Vegetation index")+
+  theme_bw()
+
+ggarrange(a,b,c,
+          ncol = 3, nrow = 1,
+          labels="AUTO")
+
+
+###transform dVI
+df$dVI <-exp(0.005*df$dVI)
+
+##make sure the rest remain linear
+d <- ggplot(df, aes(y=Moose.Density, x=dVI))+
+  geom_point()+
+    xlab("Vegetation index")+
+  theme_bw()
+
+e <- ggplot(df, aes(y=WolfDensit, x=dVI))+
+  geom_point()+
+    xlab("Vegetation index")+
+  theme_bw()
+
+f <- ggplot(df, aes(y=caribou.lambda, x=dVI))+
+  geom_point()+
+    xlab("Vegetation index")+
+  theme_bw()
+
+ggarrange(d,e,f,
+          ncol = 3, nrow = 1,
+          labels="AUTO")
+```
+
+
+
+
+##D-Separation analysis
+```{r Dsep, message=FALSE, warning=FALSE}
+
+##lay out models
+mA <- "green>moose>wolf, ha>caribou"
+mB <- "green>moose>wolf>caribou, ha>wolf"
+mC <- "green>moose>wolf, green>caribou, moose>caribou, ha>green"
+mD <- "green>moose>wolf>caribou, ha>green"
+mE <- "green>moose>wolf>caribou, ha>caribou"
+mF <- "green>moose>wolf, green>caribou, ha>green"
+
+modelA <- psem(lm(Moose.Density ~ dVI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ disturb.p, df))
+
+modelB <- psem(lm(Moose.Density ~ dVI, df),
+               lm(WolfDensit ~ Moose.Density + disturb.p, df),
+               lm(caribou.lambda ~ WolfDensit, df))
+
+modelC <- psem(lm(dVI ~ disturb.p, df),
+               lm(Moose.Density ~ dVI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ Moose.Density+dVI, df))
+
+modelD <- psem(lm(dVI ~ disturb.p, df),
+               lm(Moose.Density ~ dVI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ WolfDensit, df))
+
+modelE <- psem(lm(Moose.Density ~ dVI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ WolfDensit +disturb.p, df))
+
+modelF <- psem(lm(dVI ~ disturb.p, df),
+               lm(Moose.Density ~ dVI, df),
+               lm(WolfDensit ~ Moose.Density, df),
+               lm(caribou.lambda ~ dVI, df))
+
+
+
+
+
+##summarize
+data.frame(model=c("A","B","C","D","E","F"),
+                      description=c(mA,mB,mC,mD,mE,mF),
+                      p=round(c(summary(modelA, .progressBar = F)$Cstat$P.Value,
+                           summary(modelB, .progressBar = F)$Cstat$P.Value,
+                           summary(modelC, .progressBar = F)$Cstat$P.Value,
+                           summary(modelD, .progressBar = F)$Cstat$P.Value,
+                           summary(modelE, .progressBar = F)$Cstat$P.Value,
+                           summary(modelF, .progressBar = F)$Cstat$P.Value
+                           ),3),
+                      K=c(summary(modelA, .progressBar = F)$IC$K,
+                           summary(modelB, .progressBar = F)$IC$K,
+                           summary(modelC, .progressBar = F)$IC$K,
+                           summary(modelD, .progressBar = F)$IC$K,
+                           summary(modelE, .progressBar = F)$IC$K,
+                           summary(modelF, .progressBar = F)$IC$K
+                           ),
+                      AICc=round(c(summary(modelA, .progressBar = F)$IC$AICc,
+                           summary(modelB, .progressBar = F)$IC$AICc,
+                           summary(modelC, .progressBar = F)$IC$AICc,
+                           summary(modelD, .progressBar = F)$IC$AICc,
+                           summary(modelE, .progressBar = F)$IC$AICc,
+                           summary(modelF, .progressBar = F)$IC$AICc
+                           ),2))%>%
+  mutate(dAICc=AICc-min(AICc))%>%
+  arrange(dAICc)%>%
+  as_tibble()%>%
+  kable()
+
+###Is there another path (F), that was excluded but was maybe statistically important?
+#lm(caribou.lambda~ disturb.p + WolfDensit, data=df)%>%summary() 
+##no, wolf density remains significantly negative (p=0.0006), disturb.p has no effect (p=0.58)
+
+##final model selection table with p<0.05 removed
+aic.tab <- data.frame(model=c("A","B","C","D","E","F"),
+                      description=c(mA,mB,mC,mD,mE,mF),
+                      p=round(c(summary(modelA, .progressBar = F)$Cstat$P.Value,
+                           summary(modelB, .progressBar = F)$Cstat$P.Value,
+                           summary(modelC, .progressBar = F)$Cstat$P.Value,
+                           summary(modelD, .progressBar = F)$Cstat$P.Value,
+                           summary(modelE, .progressBar = F)$Cstat$P.Value,
+                           summary(modelF, .progressBar = F)$Cstat$P.Value
+                           ),3),
+                      K=c(summary(modelA, .progressBar = F)$IC$K,
+                           summary(modelB, .progressBar = F)$IC$K,
+                           summary(modelC, .progressBar = F)$IC$K,
+                           summary(modelD, .progressBar = F)$IC$K,
+                           summary(modelE, .progressBar = F)$IC$K,
+                           summary(modelF, .progressBar = F)$IC$K
+                           ),
+                      AICc=round(c(summary(modelA, .progressBar = F)$IC$AICc,
+                           summary(modelB, .progressBar = F)$IC$AICc,
+                           summary(modelC, .progressBar = F)$IC$AICc,
+                           summary(modelD, .progressBar = F)$IC$AICc,
+                           summary(modelE, .progressBar = F)$IC$AICc,
+                           summary(modelF, .progressBar = F)$IC$AICc
+                           ),2))%>%
+  filter(p>0.05)%>%
+  mutate(dAICc=AICc-min(AICc))%>%
+  arrange(dAICc)%>%
+  as_tibble()
+
+aic.tab%>%
+  kable()
+```
+

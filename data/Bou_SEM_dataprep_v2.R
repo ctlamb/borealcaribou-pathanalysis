@@ -20,7 +20,10 @@ disturb<-read_csv(here::here("LandCoverAttributes","PercentDisturbance.csv"))%>%
   rename(disturb.p=direct.disturb)%>%
   dplyr::select(Name, disturb.p)%>%
   mutate(Name=case_when(Name%in%"Hay River Lowlands"~"Fort Providence HRL",
-                        TRUE~Name))
+                        TRUE~Name))%>%
+  rbind(tibble(
+    Name=c("Whati (TASR Impact)","Jean Marie River"),
+    disturb.p=c(0.015,0.031)))
 
 wetl<-read_csv(here::here("LandCoverAttributes","PercentWetland.csv"))%>%
   rename(wetl.p=PERCENTAGE)%>%
@@ -35,9 +38,15 @@ wetl<-read_csv(here::here("LandCoverAttributes","PercentWetland.csv"))%>%
 ####################
 ##load wolf data
 ####################
-wf <-st_read(here::here("WolfSurveyShapes", "WolfSurveyAreas_ForPaper_FinalNoTweeds.shp"))
-plot(wf["WolfDensit"])
+wf <- st_read(here::here("WolfSurveyShapes", "WolfSurveyAreas_ForPaper_FinalNoTweeds.shp"))
 
+##add in new NWT data
+wf <- wf%>%
+  rbind(st_read(here::here("WolfSurveyShapes", "NWT_NewCensusBlocks_29092020.shp"))%>%
+          st_transform(crs=st_crs(wf))%>%
+          select(Name,area_km2=Km2,YearSurvey,WolfDensit))
+
+plot(wf["WolfDensit"])
 
 ##pull out study area names
 sa <- wf$Name
@@ -102,7 +111,7 @@ moose[moose$Survey.Area%in%"Tweedsmuir Survey Area South","p.area"] <-0.522
 moose[moose$Survey.Area%in%"Tweedsmuir Survey Area North","Survey.Area"] <-"Tweedsmuir"
 moose[moose$Survey.Area%in%"Tweedsmuir Survey Area South","Survey.Area"] <-"Tweedsmuir"
 
-###Apply weighting and collaps
+###Apply weighting and collapse
 moose <- moose%>%
   mutate(d=Moose.Density*100*p.area)%>%
   group_by(Survey.Area)%>%
@@ -124,25 +133,32 @@ b.ab <- read_csv(here::here("DemographyForms", "2019_07_CLAR_CLAB_CLSK_ESAR_YATE
   select("Area", "Year","lambda", "survival", "reproduction", "n_survival")
 
 b.sk <- read_csv(here::here("DemographyForms", "Demography_form_SaskatchewanBorealShield.csv"))%>%
-  rename("lambda" = "Lambda (S/(1-R/2))")%>%
+  rename("lambda" = "Lambda(S/(1-Rrm))")%>%
   rename(survival=S,
          reproduction=`R/2 (female calves:cow)`)%>%
   select("Area", "Year","lambda", "survival", "reproduction", "n_survival")
 
 b.tweed <- read_csv(here::here("DemographyForms", "DemographyForm NEBC_Tweeds.csv"))%>%
-  rename("lambda" = "Lambda (S/(1-R/2))")%>%
+  rename("lambda" = "Lambda(S/(1-Rrm))")%>%
   rename(survival=S,
          reproduction=`R/2 (female calves:cow)`)%>%
   select("Area", "Year","lambda", "survival", "reproduction", "n_survival")
 
 b.nwt <- read_csv(here::here("DemographyForms", "Demography_NWT_NicUpdate.csv"))%>%
-  rename("lambda" = "Lambda (S/(1-R/2))")%>%
+  rename("lambda" = "Lambda(S/(1-Rrm))")%>%
   filter(!lambda %in% "#VALUE!")%>%
   rename(survival=`S (km est)`,
          reproduction=`R/2 (female calves:cow)`)%>%
   select("Area", "Year","lambda", "survival", "reproduction", "n_survival")
 
-b.dem <- rbind(b.ab, b.sk, b.tweed, b.nwt)%>%
+b.nwt2 <- read_csv(here::here("DemographyForms", "Demography_NWT_New.csv"))%>%
+  rename("lambda" = "Lambda(S/(1-Rrm))")%>%
+  filter(!lambda %in% "#VALUE!")%>%
+  rename(survival=`S (km est)`,
+         reproduction=`R/2 (female calves:cow)`)%>%
+  select("Area", "Year","lambda", "survival", "reproduction", "n_survival")
+
+b.dem <- rbind(b.ab, b.sk, b.tweed, b.nwt, b.nwt2)%>%
   drop_na(Area)
 
 b.dem$Year <- as.numeric(b.dem$Year)
@@ -153,9 +169,10 @@ b.dem$survival <- as.numeric(b.dem$survival)
 
 ##load bou lookup table
 b.lookup <- read_csv(here::here("DemographyForms", "bou_lookup.csv"))
-b.lookup$surv <- NA
-b.lookup$repro <- NA
-b.lookup$weight_sum <- NA
+b.lookup$lambda <- NA_real_
+b.lookup$surv <- NA_real_
+b.lookup$repro <- NA_real_
+b.lookup$weight_sum <- NA_real_
 
 
 for(i in 1:nrow(b.lookup)){
@@ -174,6 +191,13 @@ for(i in 1:nrow(b.lookup)){
 
 b.lookup$lambda <- as.numeric(b.lookup$lambda)
 
+##average the Jean Marie River blocks by space
+JMR.av <- weighted.mean(x=c(b.lookup[b.lookup$bousheet=="Jean Marie River South","lambda"][[1]],b.lookup[b.lookup$bousheet=="Jean Marie River North","lambda"][[1]]),
+                                                                                w=c(b.lookup[b.lookup$bousheet=="Jean Marie River South","w"][[1]],b.lookup[b.lookup$bousheet=="Jean Marie River North","w"][[1]]))
+
+b.lookup[b.lookup$bousheet=="Jean Marie River South","lambda"] <- JMR.av
+b.lookup[b.lookup$bousheet=="Jean Marie River North","lambda"] <- JMR.av
+
 b.lam <- b.lookup%>%
   group_by(wolf)%>%
   summarise(lambda=weighted.mean(x=lambda,w=w,na.rm=TRUE),
@@ -184,7 +208,7 @@ b.lam <- b.lookup%>%
 
 
 ##################
-##load LAI
+##load delta vegetation index
 ##################
 rastlist <- list.files(path = here::here("dvi_annual_500m"), pattern='.tif', all.files=TRUE, full.names=TRUE)
 
@@ -195,7 +219,10 @@ water <- raster(here::here("water.tif"))%>%
   is.na()
 
 
-values(water)[values(water)==0]<-NA
+values(water)[values(water)==0]<-2
+values(water)<- values(water)-1
+values(water)[is.na(values(water))]<-0
+values(water)[values(water)==0]<-0
 plot(water)
 
 allrasters<- allrasters*water
@@ -203,14 +230,31 @@ allrasters<- allrasters*water
 
 ##fix up layers
 for(i in 1:nlayers(allrasters)){
-  values(allrasters[[i]])[values(allrasters[[i]])<0 & !is.na(values(allrasters[[i]]))] <- 0
+  values(allrasters[[i]])[values(allrasters[[i]])<0] <- 1
+  values(allrasters[[i]])[values(allrasters[[i]])==0]<-NA
 }
+
+
 
 plot(allrasters)
 
-moose <- subset(moose, !Survey.Area %in% "Tweedsmuir")
+
+moose <- subset(moose, !Survey.Area %in% "Tweedsmuir")%>%
+  rbind(tibble(
+    Survey.Area=c("Whati (TASR Impact)","Jean Marie River"),
+    Moose.Density=c(1.1,4.5),
+    Moose_Year_cl=2019))
+
+wf <- wf%>%
+  mutate(Name=case_when(Name%in%c("Jean Marie River South", "Jean Marie River North")~"Jean Marie River",
+         TRUE~as.character(Name)))%>%
+    group_by(Name)%>%
+    summarise(WolfDensit=mean(WolfDensit))
+
+plot(wf)
+
 for(i in 1:nrow(moose)){
-  start.year <- moose[i, "Moose_Year_cl"]-2002
+  start.year <- moose[i, "Moose_Year_cl"]-2003
   
   a <- allrasters[[start.year[[1]]:(start.year[[1]]+4)]]
   
@@ -228,15 +272,15 @@ for(i in 1:nrow(moose)){
 
 ###create final clean data
 
-final <- burn%>%
-  left_join(disturb, by="Name")%>%
-  left_join(wetl, by="Name")%>%
+final <- disturb%>%
   left_join(moose%>%dplyr::rename(Name=Survey.Area)%>%dplyr::select(Name, Moose.Density, LAI), by="Name")%>%
   left_join(wf%>%as_tibble()%>%dplyr::select(Name,WolfDensit), by="Name")%>%
   left_join(b.lam, by="Name")
 
 write.csv(final, here::here("final.csv"))
 
+###WHY DOESNT THE NEW NWT data join?? ADD manually after...ughh/
+disturb$Name[15]==b.lam$Name[c(12)]
 
 
 ###calculate poly overlap for bou spatial weighting in lookup table
@@ -259,7 +303,7 @@ wf%>%filter(Name%in% "Clarke")%>%
   select(HERD, w)
 
 
-
+wf%>%filter(Name%in% "Jean Marie River South")%>%st_area()/ (wf%>%filter(Name%in% "Jean Marie River South")%>%st_area()+wf%>%filter(Name%in% "Jean Marie River North")%>%st_area())
 
 ############
 ###MAP
@@ -307,10 +351,10 @@ pl1 <- st_sfc(pl1, crs="+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=
 
 inset <- ggplot() +
   geom_sf(data = world) +
-  geom_sf(data = pl1, fill=NA, color="red") +
+  geom_sf(data = pl1, fill=NA, color="red", size = 0.1) +
   geom_sf(data=bor%>%st_transform("+proj=laea +lat_0=52 +lon_0=-100 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs "), fill="forestgreen", col=NA, alpha=0.6)+
   coord_sf(crs = "+proj=laea +lat_0=40 +lon_0=-100 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs")+
-  theme(panel.grid.major = element_line(colour = gray(0.5), linetype = "dashed", size = 0.5),
+  theme(panel.grid.major = element_line(colour = gray(0.5), linetype = "dashed", size = 0.1),
         panel.background = element_rect(fill = "transparent",colour = NA),
         panel.border = element_rect(fill = NA, color = NA),
         axis.text = element_blank(),
@@ -321,12 +365,10 @@ inset <- ggplot() +
         legend.background = element_blank())
 
 
-
-
 ggplot() +
   geom_sf(data = us, fill ="grey95") +
   geom_sf(data = can, fill ="grey95") +
-  geom_sf(data=bor, fill="forestgreen", col=NA, alpha=0.2)+
+  geom_sf(data=bor, fill="forestgreen", col=NA, alpha=0.5)+
   geom_sf(data=wf%>%filter(Name!="Tweedsmuir")%>%left_join(disturb, by="Name"), aes(fill=disturb.p), color="black")+
   scale_fill_viridis_c(guide = guide_colourbar(direction = "horizontal"),
                        name = "habitat alteration (%)")+
@@ -345,7 +387,7 @@ ggplot() +
 
 
 
-ggsave("/Users/clayton.lamb/Google Drive/Documents/University/Work/Serrouya_BouPathway/plots/map.png", width=5, height=4, units="in")
+ggsave("/Users/clayton.lamb/Google Drive/Documents/University/Work/Serrouya_BouPathway/borealcaribou-pathanalysis/plots/map.png", width=5, height=4, units="in")
 
 
 library(mapview)
