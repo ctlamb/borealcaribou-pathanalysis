@@ -40,11 +40,11 @@ set.seed(2019)
 
 ##Plot raw data
 ```{r plot raw data,message=FALSE, warning=FALSE}
-a <-ggplot(df, aes(x=disturb.p, y=LAI))+
+a <-ggplot(df, aes(x=disturb.p, y=dVI))+
   geom_point()+
   theme_bw()
 
-b <-ggplot(df, aes(x=LAI, y=Moose.Density))+
+b <-ggplot(df, aes(x=dVI, y=Moose.Density))+
   geom_point()+
   theme_bw()+
   xlab("Vegetation index")+
@@ -115,7 +115,7 @@ b <- ggplot(df, aes(x=Moose.Density, y=caribou.lambda))+
   geom_point()+
   theme_bw()
 
-c <- ggplot(df, aes(x=LAI, y=caribou.lambda))+
+c <- ggplot(df, aes(x=dVI, y=caribou.lambda))+
   geom_point()+
     xlab("Vegetation index")+
   theme_bw()
@@ -125,21 +125,21 @@ ggarrange(a,b,c,
           labels="AUTO")
 
 
-###transform LAI
-df$LAI <-exp(0.005*df$LAI)
+###transform dVI
+df$dVI <-exp(0.005*df$dVI)
 
 ##make sure the rest remain linear
-d <- ggplot(df, aes(y=Moose.Density, x=LAI))+
+d <- ggplot(df, aes(y=Moose.Density, x=dVI))+
   geom_point()+
     xlab("Vegetation index")+
   theme_bw()
 
-e <- ggplot(df, aes(y=WolfDensit, x=LAI))+
+e <- ggplot(df, aes(y=WolfDensit, x=dVI))+
   geom_point()+
     xlab("Vegetation index")+
   theme_bw()
 
-f <- ggplot(df, aes(y=caribou.lambda, x=LAI))+
+f <- ggplot(df, aes(y=caribou.lambda, x=dVI))+
   geom_point()+
     xlab("Vegetation index")+
   theme_bw()
@@ -167,32 +167,32 @@ mD <- "ha>green>moose>wolf>caribou"
 mE <- "green>moose>wolf>caribou, ha>caribou"
 mF <- "ha>green>moose>wolf, green>caribou"
 
-modelA <- psem(lm(Moose.Density ~ LAI, df),
+modelA <- psem(lm(Moose.Density ~ dVI, df),
                lm(WolfDensit ~ Moose.Density, df),
                lm(caribou.lambda ~ disturb.p, df))
 
-modelB <- psem(lm(Moose.Density ~ LAI, df),
+modelB <- psem(lm(Moose.Density ~ dVI, df),
                lm(WolfDensit ~ Moose.Density + disturb.p, df),
                lm(caribou.lambda ~ WolfDensit, df))
 
-modelC <- psem(lm(Moose.Density ~ LAI, df),
+modelC <- psem(lm(Moose.Density ~ dVI, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ Moose.Density+LAI, df),
-               lm(LAI~disturb.p, df))
+               lm(caribou.lambda ~ Moose.Density+dVI, df),
+               lm(dVI~disturb.p, df))
 
-modelD <- psem(lm(Moose.Density ~ LAI, df),
+modelD <- psem(lm(Moose.Density ~ dVI, df),
                lm(WolfDensit ~ Moose.Density, df),
                lm(caribou.lambda ~ WolfDensit, df),
-               lm(LAI~disturb.p, df))
+               lm(dVI~disturb.p, df))
 
-modelE <- psem(lm(Moose.Density ~ LAI, df),
+modelE <- psem(lm(Moose.Density ~ dVI, df),
                lm(WolfDensit ~ Moose.Density, df),
                lm(caribou.lambda ~ WolfDensit +disturb.p, df))
 
-modelF <- psem(lm(Moose.Density ~ LAI, df),
+modelF <- psem(lm(Moose.Density ~ dVI, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ LAI, df),
-               lm(LAI~disturb.p, df))
+               lm(caribou.lambda ~ dVI, df),
+               lm(dVI~disturb.p, df))
 
 
 
@@ -268,20 +268,11 @@ aic.tab%>%
 aic.tab%>%
   kable()
 ```
-##calc AICc by hand
+
+#calc AICc by hand
 ```{r by hand, message=FALSE, warning=FALSE}
 ##calc by hand
 ###there's an issue here, where K is approaching n, AIC goes to INF.
-
-###D 
-m <-summary(modelD, .progressBar = F)
-C <- m$Cstat$Fisher.C
-K <- m$IC$K
-n <- m$IC$n
-
-(C+ ((2*K)))*(n/(n-K-1))
-
-n/(n-K-1) ##approaching over paramaterized, n=14, k=12
 
 ###C
 m <-summary(modelC, .progressBar = F)
