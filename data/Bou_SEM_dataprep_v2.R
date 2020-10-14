@@ -272,15 +272,26 @@ for(i in 1:nrow(moose)){
 
 ###create final clean data
 
+###WHY DOESNT THE NEW NWT data join?? ADD manually
+disturb$Name[15]==b.lam$Name[c(12)] ##this cannot be false, but is.
+##add again
+b.lam$Name[c(12)] <- "Jean Marie River"
+b.lam$Name[c(15)] <-"Whati (TASR Impact)"
+
+
+
 final <- disturb%>%
   left_join(moose%>%dplyr::rename(Name=Survey.Area)%>%dplyr::select(Name, Moose.Density, LAI), by="Name")%>%
   left_join(wf%>%as_tibble()%>%dplyr::select(Name,WolfDensit), by="Name")%>%
-  left_join(b.lam, by="Name")
+  left_join(b.lam, by="Name")%>%
+  rename(dEVI=LAI)%>%
+  filter(Name!="Tweedsmuir")  ##remove Tweedsmuir- non-boreal
+
 
 write.csv(final, here::here("final.csv"))
 
-###WHY DOESNT THE NEW NWT data join?? ADD manually after...ughh/
-disturb$Name[15]==b.lam$Name[c(12)]
+
+
 
 
 ###calculate poly overlap for bou spatial weighting in lookup table
@@ -311,6 +322,22 @@ wf%>%filter(Name%in% "Jean Marie River South")%>%st_area()/ (wf%>%filter(Name%in
 library(rnaturalearth)
 library(rmapshaper)
 library(ggspatial)
+library(ggsflabel)
+
+bou.ranges <- b.rang%>%
+  filter(HERD%in%c("Chinchaga","Calendar","Yates","Cold Lake","Saskatchewan Boreal Plains","Saskatchewan Boreal Shield","East Side Athabasca River" ,"Snake-Sahtahneh"))%>%
+  select(HERD)%>%
+  rbind(st_read(here::here("Boreal_Caribou_Range_Boundaries_AsOfJune62012", "Boreal_Caribou_Revised_Study_Areas_2018.shp"))%>%
+          st_transform(st_crs(b.rang))%>%
+          filter(Name%in%c("Hay River Lowlands","Dehcho South","Dehcho North", "North Slave"))%>%
+          select(HERD=Name))%>%
+  rbind(st_read(here::here("Boreal_Caribou_Range_Boundaries_AsOfJune62012", "Boreal_Caribou_Revised_Study_Areas_2018.shp"))%>%
+          st_transform(st_crs(b.rang))%>%
+          filter(Name%in%c("Pine Point / Buffalo Lake"))%>%
+          st_buffer(20000)%>%
+          select(HERD=Name))
+
+
 ##Map 
 ##make smaller
 us <- ne_countries(country="United States of America", scale='medium',returnclass = 'sf')%>%
@@ -350,9 +377,9 @@ pl1 <- st_sfc(pl1, crs="+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=
   st_transform("+proj=laea +lat_0=40 +lon_0=-100 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs")
 
 inset <- ggplot() +
-  geom_sf(data = world) +
-  geom_sf(data = pl1, fill=NA, color="red", size = 0.1) +
+  geom_sf(data = world,size=0.1) +
   geom_sf(data=bor%>%st_transform("+proj=laea +lat_0=52 +lon_0=-100 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs "), fill="forestgreen", col=NA, alpha=0.6)+
+  geom_sf(data = pl1, fill=NA, color="red", size = 0.4) +
   coord_sf(crs = "+proj=laea +lat_0=40 +lon_0=-100 +x_0=4321000 +y_0=3210000 +ellps=GRS80 +units=m +no_defs")+
   theme(panel.grid.major = element_line(colour = gray(0.5), linetype = "dashed", size = 0.1),
         panel.background = element_rect(fill = "transparent",colour = NA),
@@ -368,10 +395,13 @@ inset <- ggplot() +
 ggplot() +
   geom_sf(data = us, fill ="grey95") +
   geom_sf(data = can, fill ="grey95") +
-  geom_sf(data=bor, fill="forestgreen", col=NA, alpha=0.5)+
-  geom_sf(data=wf%>%filter(Name!="Tweedsmuir")%>%left_join(disturb, by="Name"), aes(fill=disturb.p), color="black")+
+  geom_sf(data=b.rang, fill="grey75", col=NA)+
+  geom_sf(data=bou.ranges, fill="grey35", col=NA)+
+  geom_sf(data=wf%>%filter(!Name%in%c("Tweedsmuir"))%>%left_join(disturb, by="Name"), aes(fill=disturb.p), color="black")+
+  ggsflabel::geom_sf_text(data=can,aes(label = PROV), color="black")+
+  ggsflabel::geom_sf_text_repel(data=wf%>%filter(!Name%in%c("Tweedsmuir"))%>%mutate(label=1:14),aes(label = label), color="black",min.segment.length=0.01, force=10)+
   scale_fill_viridis_c(guide = guide_colourbar(direction = "horizontal"),
-                       name = "habitat alteration (%)")+
+                       name = "Habitat alteration (%)")+
   coord_sf(xlim =c(-2.6E6,0.2E6), ylim = c(0.8E6, 2.9E6),
            crs="+proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs") +
   theme(panel.grid.major = element_blank(),
@@ -383,12 +413,10 @@ ggplot() +
         legend.position = c(0.65,0.075),
         legend.background = element_blank())+
   annotation_scale(location = "bl", width_hint = 0.25)+
-  annotation_custom(ggplotGrob(inset), xmin =-3E6, xmax = -1.8E6, ymin = 0.8E6, ymax = 1.5E6)
+  annotation_custom(ggplotGrob(inset), xmin =-2.99E6, xmax = -1.79E6, ymin = 0.83E6, ymax = 1.53E6)
 
 
 
 ggsave("/Users/clayton.lamb/Google Drive/Documents/University/Work/Serrouya_BouPathway/borealcaribou-pathanalysis/plots/map.png", width=5, height=4, units="in")
 
 
-library(mapview)
-mapview(bor)

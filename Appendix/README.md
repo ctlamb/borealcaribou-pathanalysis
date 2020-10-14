@@ -1,7 +1,7 @@
 Caribou Path Analysis–Add reviewer suggested paths for appendix
 ================
 Clayton T. Lamb
-07 October, 2020
+14 October, 2020
 
 \#\#Load Data, Functions and Cleanup Data
 
@@ -22,9 +22,7 @@ library(piecewiseSEM)
 library(tidyverse)
 
 ##data
-df <- read.csv(here::here("data", "final.csv"))%>%
-  filter(Name!="Tweedsmuir")%>% ##remove Tweedsmuir- non-boreal
-  rename(dVI=LAI)
+df <- read.csv(here::here("data", "final.csv"))
 
 ##transform to instantaneous rate of growth (r)
 df$caribou.lambda <- log(df$lambda)
@@ -36,25 +34,29 @@ set.seed(2019)
 \#\#Plot raw data
 
 ``` r
-a <-ggplot(df, aes(x=disturb.p, y=dVI))+
-  geom_point()+
-  theme_bw()
-
-b <-ggplot(df, aes(x=dVI, y=Moose.Density))+
+a <-ggplot(df, aes(x=disturb.p, y=dEVI))+
   geom_point()+
   theme_bw()+
+  theme(panel.grid.minor = element_blank())
+
+b <-ggplot(df, aes(x=dEVI, y=Moose.Density))+
+  geom_point()+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())+
   xlab("Vegetation index")+
   ylab(expression(Moose~(ind./100~km^2)))
 
 c <-ggplot(df, aes(x=Moose.Density, y=WolfDensit))+
   geom_point()+
   theme_bw()+
+  theme(panel.grid.minor = element_blank())+
   xlab(expression(Moose~(ind./100~km^2)))+
   ylab(expression(Wolf~(ind./1000~km^2)))
 
 d <-ggplot(df, aes(x=WolfDensit, y=caribou.lambda))+
   geom_point()+
   theme_bw()+
+  theme(panel.grid.minor = element_blank())+
   #geom_vline(xintercept=6.5)+
   geom_hline(yintercept=0, linetype="dashed")+
   xlab(expression(Wolf~(ind./1000~km^2)))+
@@ -63,6 +65,7 @@ d <-ggplot(df, aes(x=WolfDensit, y=caribou.lambda))+
 e <-ggplot(df, aes(x=WolfDensit, y=lambda))+
   geom_point()+
   theme_bw()+
+  theme(panel.grid.minor = element_blank())+
   #geom_vline(xintercept=6.5)+
   geom_hline(yintercept=1, linetype="dashed")+
   xlab(expression(Wolf~(ind./1000~km^2)))+
@@ -88,11 +91,13 @@ ggarrange(b,c,e,nrow=1,ncol=3, labels ="AUTO")
 f <- ggplot(df, aes(x=WolfDensit, y=survival))+
   geom_point()+
   theme_bw()+
+  theme(panel.grid.minor = element_blank())+
   xlab(expression(wolf~(n/1000~km^2)))
 
 g <- ggplot(df, aes(x=WolfDensit, y=reproduction))+
   geom_point()+
   theme_bw()+
+  theme(panel.grid.minor = element_blank())+
   xlab(expression(wolf~(n/1000~km^2)))
 
 
@@ -117,16 +122,19 @@ df$caribou.lambda <--(exp(-10*df$caribou.lambda))
 ##make sure the rest remain linear 
 a <- ggplot(df, aes(x=WolfDensit, y=caribou.lambda))+
   geom_point()+
-  theme_bw()
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())
 
 b <- ggplot(df, aes(x=Moose.Density, y=caribou.lambda))+
   geom_point()+
-  theme_bw()
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())
 
-c <- ggplot(df, aes(x=dVI, y=caribou.lambda))+
+c <- ggplot(df, aes(x=dEVI, y=caribou.lambda))+
   geom_point()+
     xlab("Vegetation index")+
-  theme_bw()
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())
 
 ggarrange(a,b,c,
           ncol = 3, nrow = 1,
@@ -136,24 +144,27 @@ ggarrange(a,b,c,
 ![](README_files/figure-gfm/Transform-1.png)<!-- -->
 
 ``` r
-###transform dVI
-df$dVI <-exp(0.005*df$dVI)
+###transform dEVI
+df$dEVI <-exp(0.005*df$dEVI)
 
 ##make sure the rest remain linear
-d <- ggplot(df, aes(y=Moose.Density, x=dVI))+
+d <- ggplot(df, aes(y=Moose.Density, x=dEVI))+
   geom_point()+
     xlab("Vegetation index")+
-  theme_bw()
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())
 
-e <- ggplot(df, aes(y=WolfDensit, x=dVI))+
+e <- ggplot(df, aes(y=WolfDensit, x=dEVI))+
   geom_point()+
     xlab("Vegetation index")+
-  theme_bw()
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())
 
-f <- ggplot(df, aes(y=caribou.lambda, x=dVI))+
+f <- ggplot(df, aes(y=caribou.lambda, x=dEVI))+
   geom_point()+
     xlab("Vegetation index")+
-  theme_bw()
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())
 
 ggarrange(d,e,f,
           ncol = 3, nrow = 1,
@@ -166,6 +177,8 @@ ggarrange(d,e,f,
 
 ``` r
 ##lay out models
+##green=dEVI which is a greeness (food) index
+##ha= habitat alteration, which is what we call disturb.p here as well
 mA <- "green>moose>wolf, ha>caribou"
 mB <- "green>moose>wolf>caribou, ha>wolf"
 mC <- "ha>green>moose>wolf, green>caribou, moose>caribou"
@@ -173,32 +186,32 @@ mD <- "ha>green>moose>wolf>caribou"
 mE <- "green>moose>wolf>caribou, ha>caribou"
 mF <- "ha>green>moose>wolf, green>caribou"
 
-modelA <- psem(lm(Moose.Density ~ dVI, df),
+modelA <- psem(lm(Moose.Density ~ dEVI, df),
                lm(WolfDensit ~ Moose.Density, df),
                lm(caribou.lambda ~ disturb.p, df))
 
-modelB <- psem(lm(Moose.Density ~ dVI, df),
+modelB <- psem(lm(Moose.Density ~ dEVI, df),
                lm(WolfDensit ~ Moose.Density + disturb.p, df),
                lm(caribou.lambda ~ WolfDensit, df))
 
-modelC <- psem(lm(Moose.Density ~ dVI, df),
+modelC <- psem(lm(Moose.Density ~ dEVI, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ Moose.Density+dVI, df),
-               lm(dVI~disturb.p, df))
+               lm(caribou.lambda ~ Moose.Density+dEVI, df),
+               lm(dEVI~disturb.p, df))
 
-modelD <- psem(lm(Moose.Density ~ dVI, df),
+modelD <- psem(lm(Moose.Density ~ dEVI, df),
                lm(WolfDensit ~ Moose.Density, df),
                lm(caribou.lambda ~ WolfDensit, df),
-               lm(dVI~disturb.p, df))
+               lm(dEVI~disturb.p, df))
 
-modelE <- psem(lm(Moose.Density ~ dVI, df),
+modelE <- psem(lm(Moose.Density ~ dEVI, df),
                lm(WolfDensit ~ Moose.Density, df),
                lm(caribou.lambda ~ WolfDensit +disturb.p, df))
 
-modelF <- psem(lm(Moose.Density ~ dVI, df),
+modelF <- psem(lm(Moose.Density ~ dEVI, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ dVI, df),
-               lm(dVI~disturb.p, df))
+               lm(caribou.lambda ~ dEVI, df),
+               lm(dEVI~disturb.p, df))
 
 
 
@@ -236,11 +249,11 @@ data.frame(model=c("A","B","C","D","E","F"),
 
 | model | description                                            |     p |  K |   AICc |  dAICc |
 | :---- | :----------------------------------------------------- | ----: | -: | -----: | -----: |
-| B     | green\>moose\>wolf\>caribou, ha\>wolf                  | 0.453 | 10 | 139.32 |   0.00 |
-| E     | green\>moose\>wolf\>caribou, ha\>caribou               | 0.444 | 10 | 139.80 |   0.48 |
-| A     | green\>moose\>wolf, ha\>caribou                        | 0.034 |  9 | 141.05 |   1.73 |
-| D     | ha\>green\>moose\>wolf\>caribou                        | 0.573 | 12 | 482.80 | 343.48 |
-| F     | ha\>green\>moose\>wolf, green\>caribou                 | 0.017 | 12 | 681.17 | 541.85 |
+| B     | green\>moose\>wolf\>caribou, ha\>wolf                  | 0.455 | 10 | 139.22 |   0.00 |
+| E     | green\>moose\>wolf\>caribou, ha\>caribou               | 0.444 | 10 | 139.79 |   0.57 |
+| A     | green\>moose\>wolf, ha\>caribou                        | 0.035 |  9 | 140.95 |   1.73 |
+| D     | ha\>green\>moose\>wolf\>caribou                        | 0.575 | 12 | 482.55 | 343.33 |
+| F     | ha\>green\>moose\>wolf, green\>caribou                 | 0.017 | 12 | 680.86 | 541.64 |
 | C     | ha\>green\>moose\>wolf, green\>caribou, moose\>caribou | 0.048 | 13 |    Inf |    Inf |
 
 ``` r
@@ -288,9 +301,9 @@ aic.tab%>%
 
 | model | description                              |     p |  K |   AICc |  dAICc |
 | :---- | :--------------------------------------- | ----: | -: | -----: | -----: |
-| B     | green\>moose\>wolf\>caribou, ha\>wolf    | 0.453 | 10 | 139.32 |   0.00 |
-| E     | green\>moose\>wolf\>caribou, ha\>caribou | 0.444 | 10 | 139.80 |   0.48 |
-| D     | ha\>green\>moose\>wolf\>caribou          | 0.573 | 12 | 482.80 | 343.48 |
+| B     | green\>moose\>wolf\>caribou, ha\>wolf    | 0.455 | 10 | 139.22 |   0.00 |
+| E     | green\>moose\>wolf\>caribou, ha\>caribou | 0.444 | 10 | 139.79 |   0.57 |
+| D     | ha\>green\>moose\>wolf\>caribou          | 0.575 | 12 | 482.55 | 343.33 |
 
 \#calc AICc by hand
 
@@ -307,7 +320,7 @@ n <- m$IC$n
 (C+ ((2*K)))*(n/(n-K-1))
 ```
 
-    ## [1] 141.05
+    ## [1] 140.9485
 
 ``` r
 ##works OK n=14, K=9
@@ -338,7 +351,7 @@ n <- m$IC$n
 (C+ ((2*K)))*(n/(n-K-1))
 ```
 
-    ## [1] 482.804
+    ## [1] 482.552
 
 ``` r
 ##approaching over paramaterized, n=14, k=12, hit to AICc is huge.

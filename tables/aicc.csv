@@ -1,4 +1,4 @@
 model,description,p,K,AICc,dAICc
-B,"green>moose>wolf>caribou, ha>wolf",0.453,10,139.32,0
-E,"green>moose>wolf>caribou, ha>caribou",0.444,10,139.8,0.4800000000000182
-D,ha>green>moose>wolf>caribou,0.573,12,482.8,343.48
+B,"green>moose>wolf>caribou, ha>wolf",0.455,10,139.22,0
+E,"green>moose>wolf>caribou, ha>caribou",0.444,10,139.79,0.5699999999999932
+D,ha>green>moose>wolf>caribou,0.575,12,482.55,343.33000000000004

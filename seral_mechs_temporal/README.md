@@ -1,8 +1,7 @@
 Clayton T. Lamb
-26 August, 2020
+14 October, 2020
 
-Load Data, Functions and Cleanup Data
--------------------------------------
+\#\#Load Data, Functions and Cleanup Data
 
 ``` r
 library(raster)
@@ -57,10 +56,9 @@ names(stack) <- paste0("X", 2000:2019)
 plot(stack)
 ```
 
-![](README_files/figure-markdown_github/Load%20Data-1.png)
+![](README_files/figure-gfm/Load%20Data-1.png)<!-- -->
 
-filter cutblocks to years of interest, and those of appropriate size
---------------------------------------------------------------------
+\#\#filter cutblocks to years of interest, and those of appropriate size
 
 ``` r
 cb.year <-  cb%>%
@@ -85,8 +83,7 @@ quantile(st_area(cb.year), 0.95)
 
     ## 1644879 [m^2]
 
-Map
----
+\#\#Map
 
 ``` r
 can <- st_read(here::here("data", "canada", "canada.shp"))%>%
@@ -107,10 +104,9 @@ plot(st_geometry(can), pch = 3, col = 'grey', add = TRUE)
 plot(st_geometry(cb.year),  border = 'red', axes = TRUE, add = TRUE)
 ```
 
-![](README_files/figure-markdown_github/map-1.png)
+![](README_files/figure-gfm/map-1.png)<!-- -->
 
-extract dVI to cublocks
------------------------
+\#\#extract dVI to cublocks
 
 ``` r
 a <- raster::extract(stack,as(cb.year,"Spatial"), fun=mean, na.rm=TRUE, method="simple",df=TRUE)
@@ -123,8 +119,7 @@ df <- cbind(as.data.frame(cb.year),a)%>%
   mutate(time=year-HARVEST_YE)
 ```
 
-Plot Raw Data
--------------
+\#\#Plot Raw Data
 
 ``` r
 precut <- df%>%
@@ -155,7 +150,7 @@ ggplot(aes(x=time, y=change))+
    facet_grid(.~prov)
 ```
 
-![](README_files/figure-markdown_github/plot-1.png)
+![](README_files/figure-gfm/plot-1.png)<!-- -->
 
 ``` r
  contrast%>%
@@ -168,10 +163,9 @@ ggplot(aes(x=time, y=change))+
    ylab("Change from pre-cut vegetation index (%)")
 ```
 
-![](README_files/figure-markdown_github/plot-2.png)
+![](README_files/figure-gfm/plot-2.png)<!-- -->
 
-Test for significant effect post logging
-----------------------------------------
+\#\#Test for significant effect post logging
 
 ``` r
 ##prep data
@@ -205,7 +199,7 @@ summary(m1)
     ## 
     ## Fixed effects:
     ##             Estimate Std. Error t value
-    ## (Intercept) 1889.062      9.610  196.57
+    ## (Intercept) 1889.062      9.610  196.58
     ## periodPost   359.517      4.612   77.95
     ## 
     ## Correlation of Fixed Effects:
@@ -224,7 +218,7 @@ ci.lvl=0.95)
 
     ## $period
 
-![](README_files/figure-markdown_github/mixed%20model-1.png)
+![](README_files/figure-gfm/mixed%20model-1.png)<!-- -->
 
 ``` r
 model.data%>%
@@ -272,10 +266,9 @@ ci.lvl=0.95)
 
     ## $period
 
-![](README_files/figure-markdown_github/mixed%20model-2.png)
+![](README_files/figure-gfm/mixed%20model-2.png)<!-- -->
 
-Bootstrap results for a time-specific plot
-------------------------------------------
+\#\#Bootstrap results for a time-specific plot
 
 ``` r
 boot.dat <- data.frame()
@@ -316,7 +309,7 @@ boot.dat%>%
    ylab("Change from pre-cut vegetation index (%)")
 ```
 
-![](README_files/figure-markdown_github/bootstrap-1.png)
+![](README_files/figure-gfm/bootstrap-1.png)<!-- -->
 
 ``` r
 precut.boot <- boot.dat%>%
@@ -341,12 +334,13 @@ contrast.boot <- boot.dat%>%
    geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=0.2)+
    geom_point(col="red")+
    theme_bw()+
+   theme(panel.grid.minor = element_blank())+
    xlab("Time since cut (years)")+
    ylab("Change from pre-cut vegetation index (%)")
 ```
 
-![](README_files/figure-markdown_github/bootstrap-2.png)
+![](README_files/figure-gfm/bootstrap-2.png)<!-- -->
 
 ``` r
-    ggsave(here::here("time_since_modelled.png"),width=6, height=4)
+    ggsave(here::here("plots", "time_since_cut_dEVI.png"),width=6, height=4)
 ```

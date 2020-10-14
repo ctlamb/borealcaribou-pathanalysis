@@ -232,10 +232,11 @@ contrast.boot <- boot.dat%>%
    geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=0.2)+
    geom_point(col="red")+
    theme_bw()+
+   theme(panel.grid.minor = element_blank())+
    xlab("Time since cut (years)")+
    ylab("Change from pre-cut vegetation index (%)")
    
-    ggsave(here::here("time_since_modelled.png"),width=6, height=4)
+    ggsave(here::here("plots", "time_since_cut_dEVI.png"),width=6, height=4)
 
 
 ```
