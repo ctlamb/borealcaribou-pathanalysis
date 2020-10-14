@@ -37,6 +37,8 @@ set.seed(2019)
 a <-ggplot(df, aes(x=disturb.p, y=dEVI))+
   geom_point()+
   theme_bw()+
+  ylab("Vegetation index")+
+  xlab("Habitat alteration")+
   theme(panel.grid.minor = element_blank())
 
 b <-ggplot(df, aes(x=dEVI, y=Moose.Density))+
@@ -91,12 +93,14 @@ ggsave(here::here("plots","univar2.png"), width=7, height=2.5, units="in")
 f <- ggplot(df, aes(x=WolfDensit, y=survival))+
   geom_point()+
   theme_bw()+
+  ylab("Survival")+
   theme(panel.grid.minor = element_blank())+
   xlab(expression(wolf~(n/1000~km^2)))
 
 g <- ggplot(df, aes(x=WolfDensit, y=reproduction))+
   geom_point()+
   theme_bw()+
+  ylab("Reproduction")+
   theme(panel.grid.minor = element_blank())+
   xlab(expression(wolf~(n/1000~km^2)))
 
@@ -126,12 +130,12 @@ predict(lm(WolfDensit~caribou.lambda+I(caribou.lambda^2)+I(caribou.lambda^3), da
 ``` r
 ##plot
 df$predicted <- predict(lm(WolfDensit~caribou.lambda+I(caribou.lambda^2)+I(caribou.lambda^3), data=df), newdata=df)
-ggplot(df)+
+ggplot(df%>%arrange(predicted))+
   geom_point(aes(x=WolfDensit, y=caribou.lambda))+
   geom_line(aes(y=caribou.lambda, x=predicted))+
   theme_bw()+
   theme(panel.grid.minor = element_blank())+
-  geom_vline(xintercept=1.8, linetype="dashed", col="red")+
+  geom_vline(xintercept=1.78, linetype="dashed", col="red")+
   xlab(expression(wolf~(n/1000~km^2)))+
   ylab("caribou pop. growth (r)")
 ```
@@ -157,7 +161,7 @@ df$predicted.moose <- predict(lm(Moose.Density~WolfDensit+I(WolfDensit^2), data=
 ggplot(df)+
   geom_point(aes(y=WolfDensit, x=Moose.Density))+
   geom_line(aes(y=WolfDensit, x=predicted.moose))+
-    geom_vline(xintercept=2.9, linetype="dashed", col="red")+
+  geom_vline(xintercept=2.9, linetype="dashed", col="red")+
   theme_bw()+
   theme(panel.grid.minor = element_blank())+
   xlab(expression(moose~(n/100~km^2)))+
@@ -187,6 +191,12 @@ int.data%>%
             lower=quantile(val,0.05)%>%round(2))%>%
   print()
 ```
+
+    ## # A tibble: 2 x 4
+    ##   type  median upper lower
+    ##   <fct>  <dbl> <dbl> <dbl>
+    ## 1 moose   2.84  3.66  1.81
+    ## 2 wolf    1.74  2.91  0.8
 
 \#\#transformations to linear
 
@@ -487,7 +497,7 @@ mod.sel.compile%>%
   filter(dAICc==0 & p>0.05)%>%
   count(description)%>%
   mutate(prop=((n/sum(n))*100)%>%round(1))%>%
-  select(-n)%>%
+  dplyr::select(-n)%>%
   arrange(-prop)%>%
   as_tibble()%>%
   kable()
@@ -639,6 +649,14 @@ dag.dat.top <-data.frame(from=c("vegetation","moose","wolf"),
            to=c("moose","wolf","caribou"),
            Direction=c("+","+","-"))
 dag.dat.top
+```
+
+    ##         from      to Direction
+    ## 1 vegetation   moose         +
+    ## 2      moose    wolf         +
+    ## 3       wolf caribou         -
+
+``` r
 dag.dat.top$strength <- NA
 dag.dat.top$strength[1] <- summary(m1a)$r.squared
 dag.dat.top$strength[2] <- summary(m1b)$r.squared
