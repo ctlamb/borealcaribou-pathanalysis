@@ -121,13 +121,8 @@ ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in"
 
 ``` r
 ###Wolf-Caribou lambda<0 intersection
-predict(lm(WolfDensit~caribou.lambda+I(caribou.lambda^2)+I(caribou.lambda^3), data=df), newdata=data.frame(caribou.lambda=0))
-```
+wf_int <-predict(lm(WolfDensit~caribou.lambda+I(caribou.lambda^2)+I(caribou.lambda^3), data=df), newdata=data.frame(caribou.lambda=0))
 
-    ##       1 
-    ## 1.78356
-
-``` r
 ##plot
 df$predicted <- predict(lm(WolfDensit~caribou.lambda+I(caribou.lambda^2)+I(caribou.lambda^3), data=df), newdata=df)
 ggplot(df%>%arrange(predicted))+
@@ -135,7 +130,7 @@ ggplot(df%>%arrange(predicted))+
   geom_line(aes(y=caribou.lambda, x=predicted))+
   theme_bw()+
   theme(panel.grid.minor = element_blank())+
-  geom_vline(xintercept=1.78, linetype="dashed", col="red")+
+  geom_vline(xintercept=wf_int, linetype="dashed", col="red")+
   xlab(expression(wolf~(n/1000~km^2)))+
   ylab("caribou pop. growth (r)")
 ```
@@ -148,20 +143,15 @@ ggplot(df%>%arrange(predicted))+
 
 ##Moose-Wolf intersection
 
-##1.8 wolves/1000 sq.km generally reached when moose are greater than 2.9/100 sq.km
-predict(lm(Moose.Density~WolfDensit+I(WolfDensit^2), data=df), newdata=data.frame(WolfDensit=1.9))
-```
+##1.8 wolves/1000 sq.km generally reached when moose are greater than 2.8/100 sq.km
+ms_int <- predict(lm(Moose.Density~WolfDensit+I(WolfDensit^2), data=df), newdata=data.frame(WolfDensit=wf_int))
 
-    ##        1 
-    ## 2.918599
-
-``` r
 ##plot
 df$predicted.moose <- predict(lm(Moose.Density~WolfDensit+I(WolfDensit^2), data=df), newdata=df)
 ggplot(df)+
   geom_point(aes(y=WolfDensit, x=Moose.Density))+
   geom_line(aes(y=WolfDensit, x=predicted.moose))+
-  geom_vline(xintercept=2.9, linetype="dashed", col="red")+
+  geom_vline(xintercept=ms_int, linetype="dashed", col="red")+
   theme_bw()+
   theme(panel.grid.minor = element_blank())+
   xlab(expression(moose~(n/100~km^2)))+
@@ -191,12 +181,6 @@ int.data%>%
             lower=quantile(val,0.05)%>%round(2))%>%
   print()
 ```
-
-    ## # A tibble: 2 x 4
-    ##   type  median upper lower
-    ##   <fct>  <dbl> <dbl> <dbl>
-    ## 1 moose   2.84  3.66  1.81
-    ## 2 wolf    1.74  2.91  0.8
 
 \#\#transformations to linear
 
@@ -649,14 +633,6 @@ dag.dat.top <-data.frame(from=c("vegetation","moose","wolf"),
            to=c("moose","wolf","caribou"),
            Direction=c("+","+","-"))
 dag.dat.top
-```
-
-    ##         from      to Direction
-    ## 1 vegetation   moose         +
-    ## 2      moose    wolf         +
-    ## 3       wolf caribou         -
-
-``` r
 dag.dat.top$strength <- NA
 dag.dat.top$strength[1] <- summary(m1a)$r.squared
 dag.dat.top$strength[2] <- summary(m1b)$r.squared

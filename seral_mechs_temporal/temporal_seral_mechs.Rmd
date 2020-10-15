@@ -229,7 +229,7 @@ contrast.boot <- boot.dat%>%
              upper=quantile(change,0.95))%>%
    ggplot(aes(x=time, y=mean))+
    geom_vline(xintercept = 0, linetype="dotted")+
-   geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=0.2)+
+   geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=1, color="black")+
    geom_point(col="red")+
    theme_bw()+
    theme(panel.grid.minor = element_blank())+
