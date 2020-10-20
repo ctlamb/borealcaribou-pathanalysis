@@ -1,7 +1,7 @@
 Caribou Path Analysis–Add reviewer suggested paths for appendix
 ================
 Clayton T. Lamb
-14 October, 2020
+20 October, 2020
 
 \#\#Load Data, Functions and Cleanup Data
 
@@ -249,11 +249,11 @@ data.frame(model=c("A","B","C","D","E","F"),
 
 | model | description                                            |     p |  K |   AICc |  dAICc |
 | :---- | :----------------------------------------------------- | ----: | -: | -----: | -----: |
-| B     | green\>moose\>wolf\>caribou, ha\>wolf                  | 0.455 | 10 | 139.22 |   0.00 |
-| E     | green\>moose\>wolf\>caribou, ha\>caribou               | 0.444 | 10 | 139.79 |   0.57 |
-| A     | green\>moose\>wolf, ha\>caribou                        | 0.035 |  9 | 140.95 |   1.73 |
-| D     | ha\>green\>moose\>wolf\>caribou                        | 0.575 | 12 | 482.55 | 343.33 |
-| F     | ha\>green\>moose\>wolf, green\>caribou                 | 0.017 | 12 | 680.86 | 541.64 |
+| B     | green\>moose\>wolf\>caribou, ha\>wolf                  | 0.461 | 10 | 138.94 |   0.00 |
+| E     | green\>moose\>wolf\>caribou, ha\>caribou               | 0.450 | 10 | 139.50 |   0.56 |
+| A     | green\>moose\>wolf, ha\>caribou                        | 0.036 |  9 | 140.34 |   1.40 |
+| D     | ha\>green\>moose\>wolf\>caribou                        | 0.580 | 12 | 481.70 | 342.76 |
+| F     | ha\>green\>moose\>wolf, green\>caribou                 | 0.015 | 12 | 686.48 | 547.54 |
 | C     | ha\>green\>moose\>wolf, green\>caribou, moose\>caribou | 0.048 | 13 |    Inf |    Inf |
 
 ``` r
@@ -301,9 +301,9 @@ aic.tab%>%
 
 | model | description                              |     p |  K |   AICc |  dAICc |
 | :---- | :--------------------------------------- | ----: | -: | -----: | -----: |
-| B     | green\>moose\>wolf\>caribou, ha\>wolf    | 0.455 | 10 | 139.22 |   0.00 |
-| E     | green\>moose\>wolf\>caribou, ha\>caribou | 0.444 | 10 | 139.79 |   0.57 |
-| D     | ha\>green\>moose\>wolf\>caribou          | 0.575 | 12 | 482.55 | 343.33 |
+| B     | green\>moose\>wolf\>caribou, ha\>wolf    | 0.461 | 10 | 138.94 |   0.00 |
+| E     | green\>moose\>wolf\>caribou, ha\>caribou | 0.450 | 10 | 139.50 |   0.56 |
+| D     | ha\>green\>moose\>wolf\>caribou          | 0.580 | 12 | 481.70 | 342.76 |
 
 \#calc AICc by hand
 
@@ -320,7 +320,7 @@ n <- m$IC$n
 (C+ ((2*K)))*(n/(n-K-1))
 ```
 
-    ## [1] 140.9485
+    ## [1] 140.3395
 
 ``` r
 ##works OK n=14, K=9
@@ -351,7 +351,7 @@ n <- m$IC$n
 (C+ ((2*K)))*(n/(n-K-1))
 ```
 
-    ## [1] 482.552
+    ## [1] 481.698
 
 ``` r
 ##approaching over paramaterized, n=14, k=12, hit to AICc is huge.

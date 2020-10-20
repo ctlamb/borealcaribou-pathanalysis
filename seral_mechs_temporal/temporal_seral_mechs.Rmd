@@ -36,18 +36,29 @@ new.order <- tibble(reord=1:length(order),
 stack <- stack(rastlist[new.order$reord])
 
 ##load water mask
-water <- raster(here::here("data", "water.tif"))
+water <- raster(here::here("data", "water.tif"))%>%
+  projectRaster(stack[[1]])%>%
+  is.na()
+
+values(water)[values(water)==0]<-2
+values(water)<- values(water)-1
+values(water)[is.na(values(water))]<-0
+plot(water)
 
 ##remove water from dVI
 stack<- stack*water
 
+
 ##fix up layers
 for(i in 1:nlayers(stack)){
-  values(stack[[i]])[values(stack[[i]])<0 & !is.na(values(stack[[i]]))] <- 0
+  values(stack[[i]])[values(stack[[i]])<0] <- 1
+  values(stack[[i]])[values(stack[[i]])==0]<-NA
 }
 
+
+
 ##rename
-names(stack) <- paste0("X", 2000:2019)
+names(stack) <- paste0("X", 2000:2020)
 
 ##plot
 plot(stack)
@@ -56,7 +67,7 @@ plot(stack)
 ##filter cutblocks to years of interest, and those of appropriate size
 ```{r filter, message=FALSE, warning=FALSE}
 cb.year <-  cb%>%
-  filter(HARVEST_YE %in% c(2003:2016))%>%
+  filter(HARVEST_YE %in% c(2003:2017))%>%
   mutate(area=st_area(.)%>%as.numeric())%>%
   filter(area>250000)
 
@@ -178,7 +189,7 @@ dat <-  contrast%>%
   group_by(ID)%>%
   sample_frac(1,replace = TRUE)%>%
   filter(time>=-10 & time<14)%>%
-  drop_na(time)
+  drop_na(time,ID,dvi)
 
 mod <- dat%>%
   lmer(dvi ~ as.character(time) + (1|ID), data=.)

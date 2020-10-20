@@ -222,7 +222,6 @@ water <- raster(here::here("water.tif"))%>%
 values(water)[values(water)==0]<-2
 values(water)<- values(water)-1
 values(water)[is.na(values(water))]<-0
-values(water)[values(water)==0]<-0
 plot(water)
 
 allrasters<- allrasters*water

@@ -1,5 +1,5 @@
 Clayton T. Lamb
-14 October, 2020
+20 October, 2020
 
 \#\#Load Data, Functions and Cleanup Data
 
@@ -39,49 +39,64 @@ new.order <- tibble(reord=1:length(order),
 stack <- stack(rastlist[new.order$reord])
 
 ##load water mask
-water <- raster(here::here("data", "water.tif"))
+water <- raster(here::here("data", "water.tif"))%>%
+  projectRaster(stack[[1]])%>%
+  is.na()
 
+values(water)[values(water)==0]<-2
+values(water)<- values(water)-1
+values(water)[is.na(values(water))]<-0
+plot(water)
+```
+
+![](README_files/figure-gfm/Load%20Data-1.png)<!-- -->
+
+``` r
 ##remove water from dVI
 stack<- stack*water
 
+
 ##fix up layers
 for(i in 1:nlayers(stack)){
-  values(stack[[i]])[values(stack[[i]])<0 & !is.na(values(stack[[i]]))] <- 0
+  values(stack[[i]])[values(stack[[i]])<0] <- 1
+  values(stack[[i]])[values(stack[[i]])==0]<-NA
 }
 
+
+
 ##rename
-names(stack) <- paste0("X", 2000:2019)
+names(stack) <- paste0("X", 2000:2020)
 
 ##plot
 plot(stack)
 ```
 
-![](README_files/figure-gfm/Load%20Data-1.png)<!-- -->
+![](README_files/figure-gfm/Load%20Data-2.png)<!-- -->
 
 \#\#filter cutblocks to years of interest, and those of appropriate size
 
 ``` r
 cb.year <-  cb%>%
-  filter(HARVEST_YE %in% c(2003:2016))%>%
+  filter(HARVEST_YE %in% c(2003:2017))%>%
   mutate(area=st_area(.)%>%as.numeric())%>%
   filter(area>250000)
 
 mean(st_area(cb.year))
 ```
 
-    ## 615503.2 [m^2]
+    ## 619332.4 [m^2]
 
 ``` r
 quantile(st_area(cb.year), 0.05)
 ```
 
-    ## 260983.2 [m^2]
+    ## 260592.4 [m^2]
 
 ``` r
 quantile(st_area(cb.year), 0.95)
 ```
 
-    ## 1644879 [m^2]
+    ## 1657385 [m^2]
 
 \#\#Map
 
@@ -185,26 +200,26 @@ summary(m1)
     ## Formula: dvi ~ period + (1 | ID)
     ##    Data: model.data
     ## 
-    ## REML criterion at convergence: 863512
+    ## REML criterion at convergence: 975948.1
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -5.8448 -0.5884  0.0040  0.6068  5.4604 
+    ## -5.9019 -0.5688  0.0157  0.5988  6.9478 
     ## 
     ## Random effects:
     ##  Groups   Name        Variance Std.Dev.
-    ##  ID       (Intercept) 242069   492.0   
-    ##  Residual             237661   487.5   
-    ## Number of obs: 56164, groups:  ID, 2956
+    ##  ID       (Intercept) 244803   494.8   
+    ##  Residual             253065   503.1   
+    ## Number of obs: 63251, groups:  ID, 3164
     ## 
     ## Fixed effects:
     ##             Estimate Std. Error t value
-    ## (Intercept) 1889.062      9.610  196.58
-    ## periodPost   359.517      4.612   77.95
+    ## (Intercept) 1861.738      9.339   199.3
+    ## periodPost   535.848      4.506   118.9
     ## 
     ## Correlation of Fixed Effects:
     ##            (Intr)
-    ## periodPost -0.260
+    ## periodPost -0.259
 
 ``` r
 ##plot model
@@ -234,26 +249,26 @@ summary(m2)
     ## Formula: change ~ period + (1 | ID)
     ##    Data: model.data
     ## 
-    ## REML criterion at convergence: 543106.9
+    ## REML criterion at convergence: 619978
     ## 
     ## Scaled residuals: 
     ##     Min      1Q  Median      3Q     Max 
-    ## -8.1880 -0.5746 -0.0070  0.5841  6.4688 
+    ## -6.9011 -0.5601  0.0033  0.5789  7.8571 
     ## 
     ## Random effects:
     ##  Groups   Name        Variance Std.Dev.
-    ##  ID       (Intercept) 299.6    17.31   
-    ##  Residual             831.9    28.84   
-    ## Number of obs: 56164, groups:  ID, 2956
+    ##  ID       (Intercept) 415.8    20.39   
+    ##  Residual             943.7    30.72   
+    ## Number of obs: 63251, groups:  ID, 3164
     ## 
     ## Fixed effects:
     ##             Estimate Std. Error t value
-    ## (Intercept)   1.6182     0.3708   4.364
-    ## periodPost   23.7137     0.2701  87.791
+    ## (Intercept)   2.1393     0.4097   5.222
+    ## periodPost   35.6724     0.2732 130.576
     ## 
     ## Correlation of Fixed Effects:
     ##            (Intr)
-    ## periodPost -0.394
+    ## periodPost -0.358
 
 ``` r
 plot_model(m2,
@@ -277,7 +292,7 @@ dat <-  contrast%>%
   group_by(ID)%>%
   sample_frac(1,replace = TRUE)%>%
   filter(time>=-10 & time<14)%>%
-  drop_na(time)
+  drop_na(time,ID,dvi)
 
 mod <- dat%>%
   lmer(dvi ~ as.character(time) + (1|ID), data=.)
@@ -331,7 +346,7 @@ contrast.boot <- boot.dat%>%
              upper=quantile(change,0.95))%>%
    ggplot(aes(x=time, y=mean))+
    geom_vline(xintercept = 0, linetype="dotted")+
-   geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=0.2)+
+   geom_errorbar(aes(ymin = lower, ymax = upper), width=0.01, alpha=1, color="black")+
    geom_point(col="red")+
    theme_bw()+
    theme(panel.grid.minor = element_blank())+
