@@ -222,20 +222,14 @@ summary(m1)
     ## periodPost -0.259
 
 ``` r
-##plot model
-plot_model(m1,
-  sort.est = TRUE,
-  title = "",
-type="pred",
-  axis.title=c("deltaVI"),
-ci.lvl=0.95)
-```
+# ##plot model
+# plot_model(m1,
+#   sort.est = TRUE,
+#   title = "",
+# type="pred",
+#   axis.title=c("deltaVI"),
+# ci.lvl=0.95)
 
-    ## $period
-
-![](README_files/figure-gfm/mixed%20model-1.png)<!-- -->
-
-``` r
 model.data%>%
   group_by(period)%>%
   summarise(mean(dvi))
@@ -271,17 +265,13 @@ summary(m2)
     ## periodPost -0.358
 
 ``` r
-plot_model(m2,
-  sort.est = TRUE,
-  title = "",
-type="pred",
-  axis.title=c(" % change in deltaVI"),
-ci.lvl=0.95)
+# plot_model(m2,
+#   sort.est = TRUE,
+#   title = "",
+# type="pred",
+#   axis.title=c(" % change in deltaVI"),
+# ci.lvl=0.95)
 ```
-
-    ## $period
-
-![](README_files/figure-gfm/mixed%20model-2.png)<!-- -->
 
 \#\#Bootstrap results for a time-specific plot
 
@@ -321,7 +311,7 @@ boot.dat%>%
    geom_point(col="red")+
    theme_bw()+
    xlab("Time since cut (years)")+
-   ylab("Change from pre-cut vegetation index (%)")
+   ylab("vegetation index")
 ```
 
 ![](README_files/figure-gfm/bootstrap-1.png)<!-- -->

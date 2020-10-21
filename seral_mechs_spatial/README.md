@@ -1,10 +1,9 @@
 Mechanisms creating early seral productivity-spatial
 ================
 Clayton T. Lamb
-30 May, 2020
+20 October, 2020
 
-Load Data, Functions and Cleanup Data
--------------------------------------
+\#\#Load Data, Functions and Cleanup Data
 
 ``` r
 library(raster)
@@ -23,14 +22,16 @@ library(tidyverse)
 ##load rasters
 vi <- raster(here::here("data", "dvi_annual_500m", "2010.tif"))
 names(vi) <- "evi"
-p <- raster(here::here("data", "climate", "precip.tif"))
-t <- raster(here::here("data", "climate", "temp.tif"))
+p <- raster(here::here("data", "climate", "precip.tif"))%>%
+  projectRaster(vi)
+t <- raster(here::here("data", "climate", "temp.tif"))%>%
+  projectRaster(vi)
 
 stack <- stack(vi,p,t)
 plot(stack)
 ```
 
-![](README_files/figure-markdown_github/Load%20Data-1.png)
+![](README_files/figure-gfm/Load%20Data-1.png)<!-- -->
 
 ``` r
 ##load points
@@ -61,11 +62,11 @@ pt.d <-pt%>%
   cbind(st_centroid(.)%>%st_coordinates())%>%
   as_data_frame()%>%
   mutate(CanLandcover=as.factor(CanLandcover))%>%
-  filter(!CanLandcover%in%c("15","16", "17", "18", "19")) ##get rid of water, ice, and cities
+  filter(!CanLandcover%in%c("15","16", "17", "18", "19"),##get rid of water, ice, and cities
+         evi>=0) ## remove erroneous devi measures.
 ```
 
-Run Models
-----------
+\#\#Run Models
 
 ``` r
 ###mods
@@ -76,13 +77,12 @@ m2 <- lm(evi~X + Y + CanLandcover + TotalDistArea, data=pt.d)
 model.sel(m1,m2)%>%kable()
 ```
 
-|     |  (Intercept)| CanLandcover |     precip|      temp|  TotalDistArea|           X|           Y|   df|     logLik|     AICc|     delta|  weight|
-|-----|------------:|:-------------|----------:|---------:|--------------:|-----------:|-----------:|----:|----------:|--------:|---------:|-------:|
-| m1  |     3638.783| +            |  -4.384567|  22.27622|       259.4952|          NA|          NA|   13|  -972224.3|  1944475|     0.000|       1|
-| m2  |     4288.826| +            |         NA|        NA|       196.3443|  -0.0008415|  -0.0009768|   13|  -973874.0|  1947774|  3299.538|       0|
+|    | (Intercept) | CanLandcover |     precip |     temp | TotalDistArea |           X |          Y | df |     logLik |    AICc |    delta | weight |
+| -- | ----------: | :----------- | ---------: | -------: | ------------: | ----------: | ---------: | -: | ---------: | ------: | -------: | -----: |
+| m1 |    3604.989 | \+           | \-4.317033 | 21.55911 |      265.0760 |          NA |         NA | 13 | \-953665.8 | 1907358 |    0.000 |      1 |
+| m2 |    4131.136 | \+           |         NA |       NA |      203.6883 | \-0.0007933 | \-0.000922 | 13 | \-955794.5 | 1911615 | 4257.377 |      0 |
 
-Plot Results
-------------
+\#\#Plot Results
 
 ``` r
 ##PLOT
@@ -121,15 +121,14 @@ p4 <- ggplot(ggpredict(m1, terms=c("TotalDistArea")), aes(x/4*100, predicted)) +
 ggarrange(p1,p2,p3,p4, nrow=2, ncol=2, labels="AUTO")
 ```
 
-![](README_files/figure-markdown_github/results-1.png)
+![](README_files/figure-gfm/results-1.png)<!-- -->
 
 ``` r
 ggsave("marginaleffects.png", width=5, height=5, units="in")
 #ggsave("disturb.png", width=3, height=3, units="in", plot=p1)
 ```
 
-Plot Tables
------------
+\#\#Plot Tables
 
 ``` r
 ###standardize between 0-1 for effect size
@@ -157,11 +156,12 @@ tbl_merge_ex1
 ```
 
 <!--html_preserve-->
+
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#mwjgfbxhtn .gt_table {
+#ayuyumzsqg .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -184,7 +184,7 @@ tbl_merge_ex1
   border-left-color: #D3D3D3;
 }
 
-#mwjgfbxhtn .gt_heading {
+#ayuyumzsqg .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -196,7 +196,7 @@ tbl_merge_ex1
   border-right-color: #D3D3D3;
 }
 
-#mwjgfbxhtn .gt_title {
+#ayuyumzsqg .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -206,7 +206,7 @@ tbl_merge_ex1
   border-bottom-width: 0;
 }
 
-#mwjgfbxhtn .gt_subtitle {
+#ayuyumzsqg .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -216,13 +216,13 @@ tbl_merge_ex1
   border-top-width: 0;
 }
 
-#mwjgfbxhtn .gt_bottom_border {
+#ayuyumzsqg .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#mwjgfbxhtn .gt_col_headings {
+#ayuyumzsqg .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -237,7 +237,7 @@ tbl_merge_ex1
   border-right-color: #D3D3D3;
 }
 
-#mwjgfbxhtn .gt_col_heading {
+#ayuyumzsqg .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -257,7 +257,7 @@ tbl_merge_ex1
   overflow-x: hidden;
 }
 
-#mwjgfbxhtn .gt_column_spanner_outer {
+#ayuyumzsqg .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -269,15 +269,15 @@ tbl_merge_ex1
   padding-right: 4px;
 }
 
-#mwjgfbxhtn .gt_column_spanner_outer:first-child {
+#ayuyumzsqg .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#mwjgfbxhtn .gt_column_spanner_outer:last-child {
+#ayuyumzsqg .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#mwjgfbxhtn .gt_column_spanner {
+#ayuyumzsqg .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -289,7 +289,7 @@ tbl_merge_ex1
   width: 100%;
 }
 
-#mwjgfbxhtn .gt_group_heading {
+#ayuyumzsqg .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -311,7 +311,7 @@ tbl_merge_ex1
   vertical-align: middle;
 }
 
-#mwjgfbxhtn .gt_empty_group_heading {
+#ayuyumzsqg .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -326,19 +326,19 @@ tbl_merge_ex1
   vertical-align: middle;
 }
 
-#mwjgfbxhtn .gt_striped {
+#ayuyumzsqg .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#mwjgfbxhtn .gt_from_md > :first-child {
+#ayuyumzsqg .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#mwjgfbxhtn .gt_from_md > :last-child {
+#ayuyumzsqg .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#mwjgfbxhtn .gt_row {
+#ayuyumzsqg .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -357,7 +357,7 @@ tbl_merge_ex1
   overflow-x: hidden;
 }
 
-#mwjgfbxhtn .gt_stub {
+#ayuyumzsqg .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -369,7 +369,7 @@ tbl_merge_ex1
   padding-left: 12px;
 }
 
-#mwjgfbxhtn .gt_summary_row {
+#ayuyumzsqg .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -379,7 +379,7 @@ tbl_merge_ex1
   padding-right: 5px;
 }
 
-#mwjgfbxhtn .gt_first_summary_row {
+#ayuyumzsqg .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -389,7 +389,7 @@ tbl_merge_ex1
   border-top-color: #D3D3D3;
 }
 
-#mwjgfbxhtn .gt_grand_summary_row {
+#ayuyumzsqg .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -399,7 +399,7 @@ tbl_merge_ex1
   padding-right: 5px;
 }
 
-#mwjgfbxhtn .gt_first_grand_summary_row {
+#ayuyumzsqg .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -409,7 +409,7 @@ tbl_merge_ex1
   border-top-color: #D3D3D3;
 }
 
-#mwjgfbxhtn .gt_table_body {
+#ayuyumzsqg .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -418,7 +418,7 @@ tbl_merge_ex1
   border-bottom-color: #D3D3D3;
 }
 
-#mwjgfbxhtn .gt_footnotes {
+#ayuyumzsqg .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -432,13 +432,13 @@ tbl_merge_ex1
   border-right-color: #D3D3D3;
 }
 
-#mwjgfbxhtn .gt_footnote {
+#ayuyumzsqg .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#mwjgfbxhtn .gt_sourcenotes {
+#ayuyumzsqg .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -452,201 +452,724 @@ tbl_merge_ex1
   border-right-color: #D3D3D3;
 }
 
-#mwjgfbxhtn .gt_sourcenote {
+#ayuyumzsqg .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#mwjgfbxhtn .gt_left {
+#ayuyumzsqg .gt_left {
   text-align: left;
 }
 
-#mwjgfbxhtn .gt_center {
+#ayuyumzsqg .gt_center {
   text-align: center;
 }
 
-#mwjgfbxhtn .gt_right {
+#ayuyumzsqg .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#mwjgfbxhtn .gt_font_normal {
+#ayuyumzsqg .gt_font_normal {
   font-weight: normal;
 }
 
-#mwjgfbxhtn .gt_font_bold {
+#ayuyumzsqg .gt_font_bold {
   font-weight: bold;
 }
 
-#mwjgfbxhtn .gt_font_italic {
+#ayuyumzsqg .gt_font_italic {
   font-style: italic;
 }
 
-#mwjgfbxhtn .gt_super {
+#ayuyumzsqg .gt_super {
   font-size: 65%;
 }
 
-#mwjgfbxhtn .gt_footnote_marks {
+#ayuyumzsqg .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
 </style>
+
+<div id="ayuyumzsqg" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+
 <table class="gt_table">
+
 <thead class="gt_col_headings">
-    <tr>
-      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1"><strong>Characteristic</strong></th>
-      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3">
-        <span class="gt_column_spanner"><strong>Original</strong></span>
-      </th>
-      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3">
-        <span class="gt_column_spanner"><strong>Standardized</strong></span>
-      </th>
-    </tr>
-    <tr>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1"><strong>Beta</strong></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1"><strong>95% CI</strong><sup class="gt_footnote_marks">1</sup></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1"><strong>p-value</strong></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1"><strong>Beta</strong></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1"><strong>95% CI</strong><sup class="gt_footnote_marks">1</sup></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1"><strong>p-value</strong></th>
-    </tr>
+
+<tr>
+
+<th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">
+
+<strong>Characteristic</strong>
+
+</th>
+
+<th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3">
+
+<span class="gt_column_spanner"><strong>Original</strong></span>
+
+</th>
+
+<th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="3">
+
+<span class="gt_column_spanner"><strong>Standardized</strong></span>
+
+</th>
+
+</tr>
+
+<tr>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">
+
+<strong>Beta</strong>
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">
+
+<strong>95% CI</strong><sup class="gt_footnote_marks">1</sup>
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">
+
+<strong>p-value</strong>
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">
+
+<strong>Beta</strong>
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">
+
+<strong>95% CI</strong><sup class="gt_footnote_marks">1</sup>
+
+</th>
+
+<th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">
+
+<strong>p-value</strong>
+
+</th>
+
+</tr>
 
 </thead>
+
 <tbody class="gt_table_body">
-    <tr>
-      <td class="gt_row gt_left">temp</td>
-      <td class="gt_row gt_center">22</td>
-      <td class="gt_row gt_center">22, 23</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">1753</td>
-      <td class="gt_row gt_center">1731, 1775</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">precip</td>
-      <td class="gt_row gt_center">-4.4</td>
-      <td class="gt_row gt_center">-4.5, -4.3</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">-1179</td>
-      <td class="gt_row gt_center">-1198, -1159</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">CanLandcover</td>
-      <td class="gt_row gt_center"></td>
-      <td class="gt_row gt_center"></td>
-      <td class="gt_row gt_center"></td>
-      <td class="gt_row gt_center"></td>
-      <td class="gt_row gt_center"></td>
-      <td class="gt_row gt_center"></td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">1</td>
-      <td class="gt_row gt_center">&mdash;</td>
-      <td class="gt_row gt_center">&mdash;</td>
-      <td class="gt_row gt_center"></td>
-      <td class="gt_row gt_center">&mdash;</td>
-      <td class="gt_row gt_center">&mdash;</td>
-      <td class="gt_row gt_center"></td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">2</td>
-      <td class="gt_row gt_center">-370</td>
-      <td class="gt_row gt_center">-383, -356</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">-370</td>
-      <td class="gt_row gt_center">-383, -356</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">5</td>
-      <td class="gt_row gt_center">727</td>
-      <td class="gt_row gt_center">715, 738</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">727</td>
-      <td class="gt_row gt_center">715, 738</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">6</td>
-      <td class="gt_row gt_center">488</td>
-      <td class="gt_row gt_center">477, 499</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">488</td>
-      <td class="gt_row gt_center">477, 499</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">8</td>
-      <td class="gt_row gt_center">239</td>
-      <td class="gt_row gt_center">231, 248</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">239</td>
-      <td class="gt_row gt_center">231, 248</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">10</td>
-      <td class="gt_row gt_center">-455</td>
-      <td class="gt_row gt_center">-468, -442</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">-455</td>
-      <td class="gt_row gt_center">-468, -442</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">11</td>
-      <td class="gt_row gt_center">602</td>
-      <td class="gt_row gt_center">540, 664</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">602</td>
-      <td class="gt_row gt_center">540, 664</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">12</td>
-      <td class="gt_row gt_center">242</td>
-      <td class="gt_row gt_center">212, 271</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">242</td>
-      <td class="gt_row gt_center">212, 271</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">14</td>
-      <td class="gt_row gt_center">-202</td>
-      <td class="gt_row gt_center">-216, -188</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">-202</td>
-      <td class="gt_row gt_center">-216, -188</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
-    <tr>
-      <td class="gt_row gt_left">TotalDistArea</td>
-      <td class="gt_row gt_center">259</td>
-      <td class="gt_row gt_center">251, 268</td>
-      <td class="gt_row gt_center"><0.001</td>
-      <td class="gt_row gt_center">1038</td>
-      <td class="gt_row gt_center">1005, 1071</td>
-      <td class="gt_row gt_center"><0.001</td>
-    </tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+temp
+
+</td>
+
+<td class="gt_row gt_center">
+
+22
+
+</td>
+
+<td class="gt_row gt_center">
+
+21, 22
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+1691
+
+</td>
+
+<td class="gt_row gt_center">
+
+1669, 1713
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+precip
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-4.3
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-4.4, -4.2
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-1158
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-1178, -1139
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+CanLandcover
+
+</td>
+
+<td class="gt_row gt_center">
+
+</td>
+
+<td class="gt_row gt_center">
+
+</td>
+
+<td class="gt_row gt_center">
+
+</td>
+
+<td class="gt_row gt_center">
+
+</td>
+
+<td class="gt_row gt_center">
+
+</td>
+
+<td class="gt_row gt_center">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">
+
+1
+
+</td>
+
+<td class="gt_row gt_center">
+
+—
+
+</td>
+
+<td class="gt_row gt_center">
+
+—
+
+</td>
+
+<td class="gt_row gt_center">
+
+</td>
+
+<td class="gt_row gt_center">
+
+—
+
+</td>
+
+<td class="gt_row gt_center">
+
+—
+
+</td>
+
+<td class="gt_row gt_center">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">
+
+2
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-365
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-378, -351
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-365
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-378, -351
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">
+
+5
+
+</td>
+
+<td class="gt_row gt_center">
+
+736
+
+</td>
+
+<td class="gt_row gt_center">
+
+724, 747
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+736
+
+</td>
+
+<td class="gt_row gt_center">
+
+724, 747
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">
+
+6
+
+</td>
+
+<td class="gt_row gt_center">
+
+487
+
+</td>
+
+<td class="gt_row gt_center">
+
+476, 498
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+487
+
+</td>
+
+<td class="gt_row gt_center">
+
+476, 498
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">
+
+8
+
+</td>
+
+<td class="gt_row gt_center">
+
+244
+
+</td>
+
+<td class="gt_row gt_center">
+
+236, 253
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+244
+
+</td>
+
+<td class="gt_row gt_center">
+
+236, 253
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">
+
+10
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-458
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-471, -444
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-458
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-471, -444
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">
+
+11
+
+</td>
+
+<td class="gt_row gt_center">
+
+612
+
+</td>
+
+<td class="gt_row gt_center">
+
+551, 674
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+612
+
+</td>
+
+<td class="gt_row gt_center">
+
+551, 674
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">
+
+12
+
+</td>
+
+<td class="gt_row gt_center">
+
+238
+
+</td>
+
+<td class="gt_row gt_center">
+
+209, 267
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+238
+
+</td>
+
+<td class="gt_row gt_center">
+
+209, 267
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left" style="text-align: left; text-indent: 10px;">
+
+14
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-202
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-216, -188
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-202
+
+</td>
+
+<td class="gt_row gt_center">
+
+\-216, -188
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
+
+<tr>
+
+<td class="gt_row gt_left">
+
+TotalDistArea
+
+</td>
+
+<td class="gt_row gt_center">
+
+265
+
+</td>
+
+<td class="gt_row gt_center">
+
+257, 273
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+<td class="gt_row gt_center">
+
+1060
+
+</td>
+
+<td class="gt_row gt_center">
+
+1027, 1093
+
+</td>
+
+<td class="gt_row gt_center">
+
+\<0.001
+
+</td>
+
+</tr>
 
 </tbody>
+
 <tfoot>
-    <tr class="gt_footnotes">
-      <td colspan="7">
-        <p class="gt_footnote">
-          <sup class="gt_footnote_marks">
-            <em>1</em>
-          </sup>
-           
-          CI = Confidence Interval
-          <br />
-        </p>
-      </td>
-    </tr>
+
+<tr class="gt_footnotes">
+
+<td colspan="7">
+
+<p class="gt_footnote">
+
+<sup class="gt_footnote_marks"> <em>1</em> </sup>
+
+CI = Confidence Interval <br />
+
+</p>
+
+</td>
+
+</tr>
 
 </tfoot>
+
 </table>
+
+</div>
 
 <!--/html_preserve-->

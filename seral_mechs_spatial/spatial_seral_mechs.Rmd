@@ -28,8 +28,10 @@ library(tidyverse)
 ##load rasters
 vi <- raster(here::here("data", "dvi_annual_500m", "2010.tif"))
 names(vi) <- "evi"
-p <- raster(here::here("data", "climate", "precip.tif"))
-t <- raster(here::here("data", "climate", "temp.tif"))
+p <- raster(here::here("data", "climate", "precip.tif"))%>%
+  projectRaster(vi)
+t <- raster(here::here("data", "climate", "temp.tif"))%>%
+  projectRaster(vi)
 
 stack <- stack(vi,p,t)
 plot(stack)
@@ -63,7 +65,8 @@ pt.d <-pt%>%
   cbind(st_centroid(.)%>%st_coordinates())%>%
   as_data_frame()%>%
   mutate(CanLandcover=as.factor(CanLandcover))%>%
-  filter(!CanLandcover%in%c("15","16", "17", "18", "19")) ##get rid of water, ice, and cities
+  filter(!CanLandcover%in%c("15","16", "17", "18", "19"),##get rid of water, ice, and cities
+         evi>=0) ## remove erroneous devi measures.
 ```
 
 

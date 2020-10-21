@@ -156,13 +156,13 @@ model.data <-
 m1 <- lmer(dvi ~ period + (1|ID), data=model.data)
 summary(m1)
 
-##plot model
-plot_model(m1,
-  sort.est = TRUE,
-  title = "",
-type="pred",
-  axis.title=c("deltaVI"),
-ci.lvl=0.95)
+# ##plot model
+# plot_model(m1,
+#   sort.est = TRUE,
+#   title = "",
+# type="pred",
+#   axis.title=c("deltaVI"),
+# ci.lvl=0.95)
 
 model.data%>%
   group_by(period)%>%
@@ -172,12 +172,12 @@ model.data%>%
 m2 <- lmer(change ~ period + (1|ID), data=model.data)
 summary(m2)
 
-plot_model(m2,
-  sort.est = TRUE,
-  title = "",
-type="pred",
-  axis.title=c(" % change in deltaVI"),
-ci.lvl=0.95)
+# plot_model(m2,
+#   sort.est = TRUE,
+#   title = "",
+# type="pred",
+#   axis.title=c(" % change in deltaVI"),
+# ci.lvl=0.95)
 ```
 
 
@@ -218,7 +218,7 @@ boot.dat%>%
    geom_point(col="red")+
    theme_bw()+
    xlab("Time since cut (years)")+
-   ylab("Change from pre-cut vegetation index (%)")
+   ylab("vegetation index")
 
 
 precut.boot <- boot.dat%>%
