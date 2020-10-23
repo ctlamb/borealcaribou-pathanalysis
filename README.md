@@ -1,7 +1,7 @@
 Caribou Path Analysis
 ================
 Clayton T. Lamb
-22 October, 2020
+23 October, 2020
 
 \#\#Load Data, Functions and Cleanup Data
 
@@ -700,7 +700,7 @@ b <- ggraph(manual_layout) +
   geom_edge_link(aes(colour = Direction,label=strength.lab), 
                  width=2, 
                  angle_calc = 'along',
-                 label_dodge = unit(3, 'mm'),
+                 label_dodge = unit(5, 'mm'),
                  arrow = arrow(length = unit(3, 'mm')), 
                  end_cap = circle(5, 'mm')) + 
   geom_node_point(size = 5, color="grey")+
