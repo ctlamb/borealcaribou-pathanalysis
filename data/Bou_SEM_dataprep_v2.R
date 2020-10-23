@@ -5,6 +5,11 @@ library(psych)
 library(raster)
 library(stringr)
 library(lwgeom)
+library(rworldmap)
+library(rnaturalearth)
+library(rmapshaper)
+library(ggspatial)
+library(ggsflabel)
 library(tidyverse)
 
 ####################
@@ -318,10 +323,7 @@ wf%>%filter(Name%in% "Jean Marie River South")%>%st_area()/ (wf%>%filter(Name%in
 ############
 ###MAP
 ############
-library(rnaturalearth)
-library(rmapshaper)
-library(ggspatial)
-library(ggsflabel)
+
 
 bou.ranges <- b.rang%>%
   filter(HERD%in%c("Chinchaga","Calendar","Yates","Cold Lake","Saskatchewan Boreal Plains","Saskatchewan Boreal Shield","East Side Athabasca River" ,"Snake-Sahtahneh"))%>%
@@ -365,7 +367,7 @@ bor <- read_sf(here::here("terr-ecoregions-TNC", "tnc_terr_ecoregions.shp"))%>%
 
 
 
-library("rworldmap")
+
 world <- getMap(resolution = "high")
 world <- st_as_sf(world)
 ##prep extents
@@ -397,7 +399,9 @@ ggplot() +
   geom_sf(data=b.rang, fill="grey75", col=NA)+
   geom_sf(data=bou.ranges, fill="grey35", col=NA)+
   geom_sf(data=wf%>%filter(!Name%in%c("Tweedsmuir"))%>%left_join(disturb, by="Name"), aes(fill=disturb.p), color="black")+
-  ggsflabel::geom_sf_text(data=can,aes(label = PROV), color="black")+
+  ggsflabel::geom_sf_text(data=can%>%filter(!PROV%in%c("NT", "SK")),aes(label = PROV), color="black")+
+  ggsflabel::geom_sf_text(data=can%>%filter(PROV%in%"NT"),aes(label = PROV), color="black", nudge_y=-100000, nudge_x=150000)+
+  ggsflabel::geom_sf_text(data=can%>%filter(PROV%in%"SK"),aes(label = PROV), color="black", nudge_y=-200000)+
   ggsflabel::geom_sf_text_repel(data=wf%>%filter(!Name%in%c("Tweedsmuir"))%>%mutate(label=1:14),aes(label = label), color="black",min.segment.length=0.01, force=10)+
   scale_fill_viridis_c(guide = guide_colourbar(direction = "horizontal"),
                        name = "Habitat alteration (%)")+

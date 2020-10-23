@@ -37,79 +37,6 @@ df$caribou.lambda <- log(df$lambda)
 set.seed(2019)
 ```
 
-##Plot raw data
-```{r plot raw data,message=FALSE, warning=FALSE}
-a <-ggplot(df, aes(x=disturb.p, y=dEVI))+
-  geom_point()+
-  theme_bw()+
-  ylab("Vegetation index")+
-  xlab("Habitat alteration")+
-  theme(panel.grid.minor = element_blank())
-
-b <-ggplot(df, aes(x=dEVI, y=Moose.Density))+
-  geom_point()+
-  theme_bw()+
-  theme(panel.grid.minor = element_blank())+
-  xlab("Vegetation index")+
-  ylab(expression(Moose~(ind./100~km^2)))
-
-c <-ggplot(df, aes(x=Moose.Density, y=WolfDensit))+
-  geom_point()+
-  theme_bw()+
-  theme(panel.grid.minor = element_blank())+
-  xlab(expression(Moose~(ind./100~km^2)))+
-  ylab(expression(Wolf~(ind./1000~km^2)))
-
-d <-ggplot(df, aes(x=WolfDensit, y=caribou.lambda))+
-  geom_point()+
-  theme_bw()+
-  theme(panel.grid.minor = element_blank())+
-  #geom_vline(xintercept=6.5)+
-  geom_hline(yintercept=0, linetype="dashed")+
-  xlab(expression(Wolf~(ind./1000~km^2)))+
-  ylab("Caribou pop. growth (r)")
-
-e <-ggplot(df, aes(x=WolfDensit, y=lambda))+
-  geom_point()+
-  theme_bw()+
-  theme(panel.grid.minor = element_blank())+
-  #geom_vline(xintercept=6.5)+
-  geom_hline(yintercept=1, linetype="dashed")+
-  xlab(expression(Wolf~(ind./1000~km^2)))+
-  ylab("Caribou pop. growth")
-
-
-ggarrange(a,b,c,d,nrow=2,ncol=2, labels ="AUTO")
-ggsave(here::here("plots","univar.png"), width=7, height=5, units="in")
-ggarrange(b,c,e,nrow=1,ncol=3, labels ="AUTO")
-ggsave(here::here("plots","univar2.png"), width=7, height=2.5, units="in")
-
-
-f <- ggplot(df, aes(x=WolfDensit, y=survival))+
-  geom_point()+
-  theme_bw()+
-  ylab("Survival")+
-  theme(panel.grid.minor = element_blank())+
-  xlab(expression(wolf~(n/1000~km^2)))
-
-g <- ggplot(df, aes(x=WolfDensit, y=reproduction))+
-  geom_point()+
-  theme_bw()+
-  ylab("Reproduction")+
-  theme(panel.grid.minor = element_blank())+
-  xlab(expression(wolf~(n/1000~km^2)))
-
-
-
-ggarrange(f,g,
-          ncol = 2, nrow = 1,
-          labels="AUTO")
-ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in")
-
-
-
-```
-
 
 ##Find intersections
 ```{r Find intersections, message=FALSE, warning=FALSE}
@@ -174,20 +101,22 @@ int.data%>%
 ##transformations to linear
 ```{r Transform, message=FALSE, warning=FALSE}
 ###transform caribou lambda
-df$caribou.lambda <--(exp(-10*df$caribou.lambda))
+df$caribou.lambda.t <--(exp(-10*df$caribou.lambda))
+
+##backtransform w/  log(-df$caribou.lambda.t)/-10
 
 ##make sure the rest remain linear 
-a <- ggplot(df, aes(x=WolfDensit, y=caribou.lambda))+
+a <- ggplot(df, aes(x=WolfDensit, y=caribou.lambda.t))+
   geom_point()+
   theme_bw()+
   theme(panel.grid.minor = element_blank())
 
-b <- ggplot(df, aes(x=Moose.Density, y=caribou.lambda))+
+b <- ggplot(df, aes(x=Moose.Density, y=caribou.lambda.t))+
   geom_point()+
   theme_bw()+
   theme(panel.grid.minor = element_blank())
 
-c <- ggplot(df, aes(x=dEVI, y=caribou.lambda))+
+c <- ggplot(df, aes(x=dEVI, y=caribou.lambda.t))+
   geom_point()+
     xlab("Vegetation index")+
   theme_bw()+
@@ -199,22 +128,22 @@ ggarrange(a,b,c,
 
 
 ###transform dEVI
-df$dEVI <-exp(0.005*df$dEVI)
-
+df$dEVI.t <-exp(0.005*df$dEVI)
+##backtransform w/  log(df$dEVI.t)/0.005
 ##make sure the rest remain linear
-d <- ggplot(df, aes(y=Moose.Density, x=dEVI))+
+d <- ggplot(df, aes(y=Moose.Density, x=dEVI.t))+
   geom_point()+
     xlab("Vegetation index")+
   theme_bw()+
   theme(panel.grid.minor = element_blank())
 
-e <- ggplot(df, aes(y=WolfDensit, x=dEVI))+
+e <- ggplot(df, aes(y=WolfDensit, x=dEVI.t))+
   geom_point()+
     xlab("Vegetation index")+
   theme_bw()+
   theme(panel.grid.minor = element_blank())
 
-f <- ggplot(df, aes(y=caribou.lambda, x=dEVI))+
+f <- ggplot(df, aes(y=caribou.lambda.t, x=dEVI.t))+
   geom_point()+
     xlab("Vegetation index")+
   theme_bw()+
@@ -226,6 +155,104 @@ ggarrange(d,e,f,
 ```
 
 
+##Plot raw data
+```{r plot raw data,message=FALSE, warning=FALSE}
+a <-ggplot(df, aes(x=disturb.p, y=dEVI))+
+    geom_line(data=df%>%mutate(pred=predict(lm(dEVI.t~disturb.p,data=.))%>%log()/.005), aes(x=disturb.p, y=pred), colour="grey")+
+  geom_point()+
+  theme_bw()+
+  ylab("Vegetation index")+
+  xlab("Habitat alteration")+
+  theme(panel.grid.minor = element_blank())
+
+b <-ggplot(df, aes(x=dEVI, y=Moose.Density))+
+    geom_line(data=df%>%mutate(pred=predict(lm(Moose.Density~dEVI.t, data=.))), aes(x=dEVI, y=pred), colour="grey")+
+  geom_point()+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())+
+  xlab("Vegetation index")+
+  ylab(expression(Moose~(ind./100~km^2)))+
+  scale_y_continuous( limits = c(0,NA))+
+  scale_x_continuous(limits = c(750,NA))
+
+c <-ggplot(df, aes(x=Moose.Density, y=WolfDensit))+
+    geom_line(data=df%>%mutate(pred=predict(lm(WolfDensit~Moose.Density, data=.))), aes(x=Moose.Density, y=pred), colour="grey")+
+  geom_point()+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())+
+  xlab(expression(Moose~(ind./100~km^2)))+
+  ylab(expression(Wolf~(ind./1000~km^2)))+
+  scale_x_continuous(limits = c(0,NA))
+
+d <-ggplot(df, aes(x=WolfDensit, y=exp(caribou.lambda)))+
+  geom_line(data=df%>%mutate(pred=-predict(lm(caribou.lambda.t~WolfDensit, data=.))%>%log()/-10), aes(x=WolfDensit, y=exp(pred)), colour="grey")+
+  geom_point()+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())+
+  geom_hline(yintercept=1, linetype="dashed")+
+  xlab(expression(Wolf~(ind./1000~km^2)))+
+  ylab("Caribou pop. growth")
+
+r1a <-ggplot(df, aes(x=disturb.p, y=exp(caribou.lambda)))+
+  geom_line(data=df%>%mutate(pred=-predict(lm(caribou.lambda.t~disturb.p, data=.))%>%log()/-10), aes(x=disturb.p, y=exp(pred)), colour="grey")+
+  geom_point()+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())+
+  geom_hline(yintercept=1, linetype="dashed")+
+  xlab("Habitat Alteration")+
+  ylab("Caribou pop. growth")
+
+
+r1b <-ggplot(df, aes(x=dEVI, y=exp(caribou.lambda)))+
+ geom_line(data=df%>%mutate(pred=-predict(lm(caribou.lambda.t~dEVI.t, data=.))%>%log()/-10), aes(x=log(dEVI.t)/.005, y=exp(pred)), colour="grey")+
+  geom_point()+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())+
+  geom_hline(yintercept=1, linetype="dashed")+
+  xlab("Vegetation index")+
+  ylab("Caribou pop. growth")+
+  scale_x_continuous(limits = c(750,NA))
+
+r1c <-ggplot(df, aes(x=disturb.p, y=WolfDensit))+
+    geom_line(data=df%>%mutate(pred=predict(lm(WolfDensit~disturb.p, data=.))), aes(x=disturb.p, y=pred), colour="grey")+
+  geom_point()+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())+
+  ylab(expression(Wolf~(ind./1000~km^2)))+
+  xlab("Habitat Alteration")
+
+
+ggarrange(a,b,c,d,r1a,r1b,r1c,nrow=2,ncol=4, labels ="AUTO")
+ggsave(here::here("plots","univar.png"), width=7, height=5, units="in")
+ggarrange(b,c,e,nrow=1,ncol=3, labels ="AUTO")
+ggsave(here::here("plots","univar2.png"), width=7, height=2.5, units="in")
+
+
+f <- ggplot(df, aes(x=WolfDensit, y=survival))+
+  geom_point()+
+  theme_bw()+
+  ylab("Survival")+
+  theme(panel.grid.minor = element_blank())+
+  xlab(expression(wolf~(n/1000~km^2)))
+
+g <- ggplot(df, aes(x=WolfDensit, y=reproduction))+
+  geom_point()+
+  theme_bw()+
+  ylab("Reproduction")+
+  theme(panel.grid.minor = element_blank())+
+  xlab(expression(wolf~(n/1000~km^2)))
+
+
+
+ggarrange(f,g,
+          ncol = 2, nrow = 1,
+          labels="AUTO")
+ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in")
+
+
+
+```
+
 
 
 
@@ -233,12 +260,12 @@ ggarrange(d,e,f,
 ##Correlation marix
 ```{r corr, message=FALSE, warning=FALSE}
 M <- cor(df%>%
-           dplyr::select(disturb.p,dEVI, Moose.Density, WolfDensit,caribou.lambda)%>%
+           dplyr::select(disturb.p,dEVI.t, Moose.Density, WolfDensit,caribou.lambda.t)%>%
            rename(`Habitat alteration`=disturb.p,
-                  `Vegetation index`=dEVI,
+                  `Vegetation index`=dEVI.t,
                   `Moose density`=Moose.Density,
                   `Wolf density`=WolfDensit,
-                  `Caribou pop. growth`=caribou.lambda), use="complete.obs")
+                  `Caribou pop. growth`=caribou.lambda.t), use="complete.obs")
 
 corrplot(M, method = "number", type = "upper", order = "hclust")
 ```
@@ -250,7 +277,7 @@ corrplot(M, method = "number", type = "upper", order = "hclust")
 ```{r Dsep, message=FALSE, warning=FALSE}
 
 ##lay out models
-##green=dEVI which is a greeness (food) index
+##green=dEVI.t which is a greeness (food) index
 ##ha= habitat alteration, which is what we call disturb.p here as well
 mA <- "green>moose>wolf, ha>caribou"
 mB <- "green>moose>wolf>caribou, ha>wolf"
@@ -259,31 +286,31 @@ mD <- "green>moose>wolf>caribou, ha"
 mE <- "green>moose>wolf>caribou, ha>caribou"
 mF <- "green>moose>wolf, green>caribou, ha"
 
-modelA <- psem(lm(Moose.Density ~ dEVI, df),
+modelA <- psem(lm(Moose.Density ~ dEVI.t, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ disturb.p, df))
+               lm(caribou.lambda.t ~ disturb.p, df))
 
-modelB <- psem(lm(Moose.Density ~ dEVI, df),
+modelB <- psem(lm(Moose.Density ~ dEVI.t, df),
                lm(WolfDensit ~ Moose.Density + disturb.p, df),
-               lm(caribou.lambda ~ WolfDensit, df))
+               lm(caribou.lambda.t ~ WolfDensit, df))
 
-modelC <- psem(lm(Moose.Density ~ dEVI, df),
+modelC <- psem(lm(Moose.Density ~ dEVI.t, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ Moose.Density+dEVI, df))%>%
+               lm(caribou.lambda.t ~ Moose.Density+dEVI.t, df))%>%
   update(disturb.p ~ 1)
 
-modelD <- psem(lm(Moose.Density ~ dEVI, df),
+modelD <- psem(lm(Moose.Density ~ dEVI.t, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ WolfDensit, df))%>%
+               lm(caribou.lambda.t ~ WolfDensit, df))%>%
   update(disturb.p ~ 1)
 
-modelE <- psem(lm(Moose.Density ~ dEVI, df),
+modelE <- psem(lm(Moose.Density ~ dEVI.t, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ WolfDensit +disturb.p, df))
+               lm(caribou.lambda.t ~ WolfDensit +disturb.p, df))
 
-modelF <- psem(lm(Moose.Density ~ dEVI, df),
+modelF <- psem(lm(Moose.Density ~ dEVI.t, df),
                lm(WolfDensit ~ Moose.Density, df),
-               lm(caribou.lambda ~ dEVI, df))%>%
+               lm(caribou.lambda.t ~ dEVI.t, df))%>%
   update(disturb.p ~ 1)
 
 
@@ -320,7 +347,7 @@ data.frame(model=c("A","B","C","D","E","F"),
   kable()
 
 ###Is there another path (F), that was excluded but was maybe statistically important?
-#lm(caribou.lambda~ disturb.p + WolfDensit, data=df)%>%summary() 
+#lm(caribou.lambda.t~ disturb.p + WolfDensit, data=df)%>%summary() 
 ##no, wolf density remains significantly negative (p=0.0006), disturb.p has no effect (p=0.58)
 
 ##final model selection table with p<0.05 removed
@@ -376,31 +403,31 @@ for(i in 1:1000){
 #len <-rbind(len,data.frame(len=length(unique(df.i$Name))))
 
 
-modelA <- psem(lm(Moose.Density ~ dEVI, df.i),
+modelA <- psem(lm(Moose.Density ~ dEVI.t, df.i),
                lm(WolfDensit ~ Moose.Density, df.i),
-               lm(caribou.lambda ~ disturb.p, df.i))
+               lm(caribou.lambda.t ~ disturb.p, df.i))
 
-modelB <- psem(lm(Moose.Density ~ dEVI, df.i),
+modelB <- psem(lm(Moose.Density ~ dEVI.t, df.i),
                lm(WolfDensit ~ Moose.Density + disturb.p, df.i),
-               lm(caribou.lambda ~ WolfDensit, df.i))
+               lm(caribou.lambda.t ~ WolfDensit, df.i))
 
-modelC <- psem(lm(Moose.Density ~ dEVI, df.i),
+modelC <- psem(lm(Moose.Density ~ dEVI.t, df.i),
                lm(WolfDensit ~ Moose.Density, df.i),
-               lm(caribou.lambda ~ Moose.Density+dEVI, df.i))%>%
+               lm(caribou.lambda.t ~ Moose.Density+dEVI.t, df.i))%>%
   update(disturb.p ~ 1)
 
-modelD <- psem(lm(Moose.Density ~ dEVI, df.i),
+modelD <- psem(lm(Moose.Density ~ dEVI.t, df.i),
                lm(WolfDensit ~ Moose.Density, df.i),
-               lm(caribou.lambda ~ WolfDensit, df.i))%>%
+               lm(caribou.lambda.t ~ WolfDensit, df.i))%>%
   update(disturb.p ~ 1)
 
-modelE <- psem(lm(Moose.Density ~ dEVI, df.i),
+modelE <- psem(lm(Moose.Density ~ dEVI.t, df.i),
                lm(WolfDensit ~ Moose.Density, df.i),
-               lm(caribou.lambda ~ WolfDensit +disturb.p, df.i))
+               lm(caribou.lambda.t ~ WolfDensit +disturb.p, df.i))
 
-modelF <- psem(lm(Moose.Density ~ dEVI, df.i),
+modelF <- psem(lm(Moose.Density ~ dEVI.t, df.i),
                lm(WolfDensit ~ Moose.Density, df.i),
-               lm(caribou.lambda ~ dEVI, df.i))%>%
+               lm(caribou.lambda.t ~ dEVI.t, df.i))%>%
   update(disturb.p ~ 1)
 
 
@@ -556,29 +583,31 @@ a
 
 
 ###
-m1a <- lm(Moose.Density~dEVI, data=df%>%mutate(dEVI=(dEVI-min(dEVI))/(max(dEVI)-min(dEVI)),
+m1a <- lm(Moose.Density~dEVI.t, data=df%>%mutate(dEVI.t=(dEVI.t-min(dEVI.t))/(max(dEVI.t)-min(dEVI.t)),
                                                Moose.Density=(Moose.Density-min(Moose.Density))/(max(Moose.Density)-min(Moose.Density)),
                                                WolfDensit=(WolfDensit-min(WolfDensit))/(max(WolfDensit)-min(WolfDensit)),
-                                               caribou.lambda=(caribou.lambda-min(caribou.lambda))/(max(caribou.lambda)-min(caribou.lambda)))
+                                               caribou.lambda.t=(caribou.lambda.t-min(caribou.lambda.t))/(max(caribou.lambda.t)-min(caribou.lambda.t)))
 )
 
 summary(m1a)$r.squared
+summary(m1a)$coefficients[2,1]
 
-m1b <- lm(WolfDensit~Moose.Density, data=df%>%mutate(dEVI=(dEVI-min(dEVI))/(max(dEVI)-min(dEVI)),
+m1b <- lm(WolfDensit~Moose.Density, data=df%>%mutate(dEVI.t=(dEVI.t-min(dEVI.t))/(max(dEVI.t)-min(dEVI.t)),
                                                Moose.Density=(Moose.Density-min(Moose.Density))/(max(Moose.Density)-min(Moose.Density)),
                                                WolfDensit=(WolfDensit-min(WolfDensit))/(max(WolfDensit)-min(WolfDensit)),
-                                               caribou.lambda=(caribou.lambda-min(caribou.lambda))/(max(caribou.lambda)-min(caribou.lambda)))
+                                               caribou.lambda.t=(caribou.lambda.t-min(caribou.lambda.t))/(max(caribou.lambda.t)-min(caribou.lambda.t)))
 )
 summary(m1b)$r.squared
+summary(m1b)$coefficients[2,1]
 
 
-m1c <- lm(caribou.lambda~WolfDensit, data=df%>%mutate(dEVI=(dEVI-min(dEVI))/(max(dEVI)-min(dEVI)),
+m1c <- lm(caribou.lambda.t~WolfDensit, data=df%>%mutate(dEVI.t=(dEVI.t-min(dEVI.t))/(max(dEVI.t)-min(dEVI.t)),
                                                     Moose.Density=(Moose.Density-min(Moose.Density))/(max(Moose.Density)-min(Moose.Density)),
                                                     WolfDensit=(WolfDensit-min(WolfDensit))/(max(WolfDensit)-min(WolfDensit)),
-                                                    caribou.lambda=(caribou.lambda-min(caribou.lambda))/(max(caribou.lambda)-min(caribou.lambda)))
+                                                    caribou.lambda.t=(caribou.lambda.t-min(caribou.lambda.t))/(max(caribou.lambda.t)-min(caribou.lambda.t)))
 )
 summary(m1c)$r.squared
-
+summary(m1c)$coefficients[2,1]
 
 
 ##from % models selected in bootstrap
@@ -587,9 +616,13 @@ dag.dat.top <-data.frame(from=c("vegetation","moose","wolf"),
            Direction=c("+","+","-"))
 dag.dat.top
 dag.dat.top$strength <- NA
-dag.dat.top$strength[1] <- summary(m1a)$r.squared
-dag.dat.top$strength[2] <- summary(m1b)$r.squared
-dag.dat.top$strength[3] <- summary(m1c)$r.squared
+dag.dat.top$strength[1] <- summary(m1a)$r.squared%>%round(2)
+dag.dat.top$strength[2] <- summary(m1b)$r.squared%>%round(2)
+dag.dat.top$strength[3] <- summary(m1c)$r.squared%>%round(2)
+dag.dat.top$strength.lab <- NA
+dag.dat.top$strength.lab[1] <- paste0(summary(m1a)$r.squared%>%round(2), " (", summary(m1a)$coefficients[2,1]%>%round(2), ")")
+dag.dat.top$strength.lab[2] <- paste0(summary(m1b)$r.squared%>%round(2), " (", summary(m1b)$coefficients[2,1]%>%round(2), ")")
+dag.dat.top$strength.lab[3] <- paste0(summary(m1c)$r.squared%>%round(2), " (", summary(m1c)$coefficients[2,1]%>%round(2), ")")
 
 
 
@@ -601,7 +634,7 @@ manual_layout$x <- c(0, 0.2, 0.8,1,0.9)
 manual_layout$y <- c(0, 0.45, 0.55,1,0.2)
 
 b <- ggraph(manual_layout) + 
-  geom_edge_link(aes(colour = Direction,label=round(strength,2)), 
+  geom_edge_link(aes(colour = Direction,label=strength.lab), 
                  width=2, 
                  angle_calc = 'along',
                  label_dodge = unit(3, 'mm'),
