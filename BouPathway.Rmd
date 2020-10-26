@@ -224,8 +224,6 @@ r1c <-ggplot(df, aes(x=disturb.p, y=WolfDensit))+
 
 ggarrange(a,b,c,d,r1a,r1b,r1c,nrow=2,ncol=4, labels ="AUTO")
 ggsave(here::here("plots","univar.png"), width=7, height=5, units="in")
-ggarrange(b,c,e,nrow=1,ncol=3, labels ="AUTO")
-ggsave(here::here("plots","univar2.png"), width=7, height=2.5, units="in")
 
 
 f <- ggplot(df, aes(x=WolfDensit, y=survival))+
@@ -487,7 +485,7 @@ mod.sel.compile%>%
 
 
 ##Plot paths
-```{r Plot paths, message=FALSE, warning=FALSE}
+```{r Plot paths, fig.height=3.5, fig.width=9, message=FALSE, warning=FALSE}
 dag.dat <- data.frame()
 mod.sel.compile.path <- mod.sel.compile%>%
   filter(dAICc==0 & p>0.05)

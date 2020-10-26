@@ -233,13 +233,6 @@ ggarrange(a,b,c,d,r1a,r1b,r1c,nrow=2,ncol=4, labels ="AUTO")
 
 ``` r
 ggsave(here::here("plots","univar.png"), width=7, height=5, units="in")
-ggarrange(b,c,e,nrow=1,ncol=3, labels ="AUTO")
-```
-
-![](README_files/figure-gfm/plot%20raw%20data-2.png)<!-- -->
-
-``` r
-ggsave(here::here("plots","univar2.png"), width=7, height=2.5, units="in")
 
 
 f <- ggplot(df, aes(x=WolfDensit, y=survival))+
@@ -263,7 +256,7 @@ ggarrange(f,g,
           labels="AUTO")
 ```
 
-![](README_files/figure-gfm/plot%20raw%20data-3.png)<!-- -->
+![](README_files/figure-gfm/plot%20raw%20data-2.png)<!-- -->
 
 ``` r
 ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in")
