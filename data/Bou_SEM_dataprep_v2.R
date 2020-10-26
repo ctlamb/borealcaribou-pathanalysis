@@ -243,11 +243,12 @@ for(i in 1:nlayers(allrasters)){
 plot(allrasters)
 
 
+##scab on NWT data later
 moose <- subset(moose, !Survey.Area %in% "Tweedsmuir")%>%
   rbind(tibble(
     Survey.Area=c("Whati (TASR Impact)","Jean Marie River"),
     Moose.Density=c(1.1,4.5),
-    Moose_Year_cl=2019))
+    Moose_Year_cl=2020))
 
 wf <- wf%>%
   mutate(Name=case_when(Name%in%c("Jean Marie River South", "Jean Marie River North")~"Jean Marie River",

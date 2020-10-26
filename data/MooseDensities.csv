@@ -6,7 +6,7 @@ Cold Lake AB 529,0.089,2017,2017,per km2,distance sampling,,https://open.alberta
 Cold Lake AB 512,0.3,2013,2013,per km2,SRB,,https://open.alberta.ca/dataset/8d07e6b8-9e91-44ee-9bd8-3909f162b126/resource/191162fc-bd04-45df-99f4-db5517443508/download/wmu516ungulatesurvey-2018.pdf,,Need to area weight mean
 Cold Lake AB 519,0.14,2015,2015,per km2,distance sampling,,https://open.alberta.ca/dataset/6f4ed10a-08c0-4e3d-bb68-0b0eae11cd10/resource/b5f3156f-c005-4e39-8f80-8821b97d2747/download/wmu529-aerialmoosesurvey-jan2017.pdf,,Need to area weight mean
 Cold Lake AB 517,0.085,2018,2018,per km 2,SRB,,https://open.alberta.ca/dataset/6f4ed10a-08c0-4e3d-bb68-0b0eae11cd10/resource/b5f3156f-c005-4e39-8f80-8821b97d2747/download/wmu529-aerialmoosesurvey-jan2017.pdf,,Need to area weight mean
-Cold Lake Reference,0.0298,2017,2017,per km2,cameras,unpublished data,,,2.7-14.99. This was by cameras and was at 0.0734. Mel suggested to use coeffcient of 0.406 to rescale to areal survey. Making the new # .0298
+Cold Lake Reference,0.0377,2017,2017,per km2,cameras,unpublished data,,,
 Fort Liard,0.0716,2017,2017,per km2,aerial survey,"Larter, personal communiaction",,,2014 density was 4.69/100
 Fort Providence South FMA,0.029,2012,2012,per km2,aerial survey,"Kelly, personal communication",,,
 Fort Providence Reference,0.029,2012,2012,per km2,aerial survey,"Kelly, personal communication",,,

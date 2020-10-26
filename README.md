@@ -1,7 +1,7 @@
 Caribou Path Analysis
 ================
 Clayton T. Lamb
-23 October, 2020
+26 October, 2020
 
 \#\#Load Data, Functions and Cleanup Data
 
@@ -361,12 +361,12 @@ data.frame(model=c("A","B","C","D","E","F"),
 
 | model | description                                            |     p |  K |   AICc | dAICc |
 | :---- | :----------------------------------------------------- | ----: | -: | -----: | ----: |
-| D     | green\>moose\>wolf\>caribou, ha                        | 0.527 |  9 | 101.58 |  0.00 |
-| B     | green\>moose\>wolf\>caribou, ha\>wolf                  | 0.461 | 10 | 138.94 | 37.36 |
-| E     | green\>moose\>wolf\>caribou, ha\>caribou               | 0.450 | 10 | 139.50 | 37.92 |
-| A     | green\>moose\>wolf, ha\>caribou                        | 0.036 |  9 | 140.34 | 38.76 |
-| F     | green\>moose\>wolf, green\>caribou, ha                 | 0.013 |  9 | 151.77 | 50.19 |
-| C     | green\>moose\>wolf, green\>caribou, moose\>caribou, ha | 0.043 | 10 | 180.91 | 79.33 |
+| D     | green\>moose\>wolf\>caribou, ha                        | 0.509 |  9 | 102.32 |  0.00 |
+| B     | green\>moose\>wolf\>caribou, ha\>wolf                  | 0.433 | 10 | 140.42 | 38.10 |
+| A     | green\>moose\>wolf, ha\>caribou                        | 0.036 |  9 | 140.59 | 38.27 |
+| E     | green\>moose\>wolf\>caribou, ha\>caribou               | 0.429 | 10 | 140.61 | 38.29 |
+| F     | green\>moose\>wolf, green\>caribou, ha                 | 0.011 |  9 | 153.67 | 51.35 |
+| C     | green\>moose\>wolf, green\>caribou, moose\>caribou, ha | 0.040 | 10 | 182.13 | 79.81 |
 
 ``` r
 ###Is there another path (F), that was excluded but was maybe statistically important?
@@ -411,9 +411,9 @@ aic.tab%>%
 
 | model | description                              |     p |  K |   AICc | dAICc |
 | :---- | :--------------------------------------- | ----: | -: | -----: | ----: |
-| D     | green\>moose\>wolf\>caribou, ha          | 0.527 |  9 | 101.58 |  0.00 |
-| B     | green\>moose\>wolf\>caribou, ha\>wolf    | 0.461 | 10 | 138.94 | 37.36 |
-| E     | green\>moose\>wolf\>caribou, ha\>caribou | 0.450 | 10 | 139.50 | 37.92 |
+| D     | green\>moose\>wolf\>caribou, ha          | 0.509 |  9 | 102.32 |  0.00 |
+| B     | green\>moose\>wolf\>caribou, ha\>wolf    | 0.433 | 10 | 140.42 | 38.10 |
+| E     | green\>moose\>wolf\>caribou, ha\>caribou | 0.429 | 10 | 140.61 | 38.29 |
 
 \#\#bootstrap D-Separation analysis
 
@@ -516,12 +516,12 @@ mod.sel.compile%>%
 
 | description                                            | prop |
 | :----------------------------------------------------- | ---: |
-| green\>moose\>wolf\>caribou, ha                        | 83.4 |
-| green\>moose\>wolf\>caribou, ha\>wolf                  | 10.2 |
-| green\>moose\>wolf\>caribou, ha\>caribou               |  2.2 |
-| green\>moose\>wolf, green\>caribou, ha                 |  1.8 |
-| green\>moose\>wolf, green\>caribou, moose\>caribou, ha |  1.4 |
-| green\>moose\>wolf, ha\>caribou                        |  1.0 |
+| green\>moose\>wolf\>caribou, ha                        | 82.1 |
+| green\>moose\>wolf\>caribou, ha\>wolf                  | 11.8 |
+| green\>moose\>wolf\>caribou, ha\>caribou               |  1.8 |
+| green\>moose\>wolf, green\>caribou, moose\>caribou, ha |  1.6 |
+| green\>moose\>wolf, ha\>caribou                        |  1.6 |
+| green\>moose\>wolf, green\>caribou, ha                 |  1.1 |
 
 \#\#Plot paths
 
@@ -630,13 +630,13 @@ m1a <- lm(Moose.Density~dEVI.t, data=df%>%mutate(dEVI.t=(dEVI.t-min(dEVI.t))/(ma
 summary(m1a)$r.squared
 ```
 
-    ## [1] 0.4359054
+    ## [1] 0.4338504
 
 ``` r
 summary(m1a)$coefficients[2,1]
 ```
 
-    ## [1] 0.7367453
+    ## [1] 0.736815
 
 ``` r
 m1b <- lm(WolfDensit~Moose.Density, data=df%>%mutate(dEVI.t=(dEVI.t-min(dEVI.t))/(max(dEVI.t)-min(dEVI.t)),
@@ -647,13 +647,13 @@ m1b <- lm(WolfDensit~Moose.Density, data=df%>%mutate(dEVI.t=(dEVI.t-min(dEVI.t))
 summary(m1b)$r.squared
 ```
 
-    ## [1] 0.7687768
+    ## [1] 0.7661674
 
 ``` r
 summary(m1b)$coefficients[2,1]
 ```
 
-    ## [1] 0.7864172
+    ## [1] 0.788842
 
 ``` r
 m1c <- lm(caribou.lambda.t~WolfDensit, data=df%>%mutate(dEVI.t=(dEVI.t-min(dEVI.t))/(max(dEVI.t)-min(dEVI.t)),
