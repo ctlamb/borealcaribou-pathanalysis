@@ -156,7 +156,7 @@ ggarrange(d,e,f,
 
 
 ##Plot raw data
-```{r plot raw data,message=FALSE, warning=FALSE}
+```{r plot raw data, fig.height=5, fig.width=9.5, message=FALSE, warning=FALSE}
 a <-ggplot(df, aes(x=disturb.p, y=dEVI))+
     geom_line(data=df%>%mutate(pred=predict(lm(dEVI.t~disturb.p,data=.))%>%log()/.005), aes(x=disturb.p, y=pred), colour="grey")+
   geom_point()+
@@ -223,7 +223,7 @@ r1c <-ggplot(df, aes(x=disturb.p, y=WolfDensit))+
 
 
 ggarrange(a,b,c,d,r1a,r1b,r1c,nrow=2,ncol=4, labels ="AUTO")
-ggsave(here::here("plots","univar.png"), width=8, height=5, units="in")
+ggsave(here::here("plots","univar.png"), width=9.5, height=5, units="in")
 
 
 f <- ggplot(df, aes(x=WolfDensit, y=survival))+
