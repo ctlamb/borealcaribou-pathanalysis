@@ -1,7 +1,7 @@
 Caribou Path Analysis
 ================
 Clayton T. Lamb
-26 October, 2020
+27 October, 2020
 
 \#\#Load Data, Functions and Cleanup Data
 
@@ -57,7 +57,7 @@ ggplot(df%>%arrange(predicted))+
 
 ##Moose-Wolf intersection
 
-##1.8 wolves/1000 sq.km generally reached when moose are greater than 2.8/100 sq.km
+##1.8 wolves/1000 sq.km generally reached when moose are greater than 2.9/100 sq.km
 ms_int <- predict(lm(Moose.Density~WolfDensit+I(WolfDensit^2), data=df), newdata=data.frame(WolfDensit=wf_int))
 
 ##plot
@@ -232,7 +232,7 @@ ggarrange(a,b,c,d,r1a,r1b,r1c,nrow=2,ncol=4, labels ="AUTO")
 ![](README_files/figure-gfm/plot%20raw%20data-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots","univar.png"), width=7, height=5, units="in")
+ggsave(here::here("plots","univar.png"), width=9.5, height=5, units="in")
 
 
 f <- ggplot(df, aes(x=WolfDensit, y=survival))+
