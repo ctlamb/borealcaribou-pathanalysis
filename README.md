@@ -1,7 +1,7 @@
 Caribou Path Analysis
 ================
 Clayton T. Lamb
-27 October, 2020
+08 November, 2020
 
 \#\#Load Data, Functions and Cleanup Data
 
@@ -74,6 +74,8 @@ ggplot(df)+
 
 ![](README_files/figure-gfm/Find%20intersections-2.png)<!-- -->
 
+\#\#Find intersections
+
 ``` r
 #bootstrap errors
 int.data <- data.frame()
@@ -83,7 +85,7 @@ df.i <- df%>%sample_frac(1, replace=TRUE)
 a <- data.frame(i=i,
                 type=c("wolf", "moose"),
                 val=c(predict(lm(WolfDensit~caribou.lambda+I(caribou.lambda^2)+I(caribou.lambda^3), data=df.i), newdata=data.frame(caribou.lambda=0)),
-                      predict(lm(Moose.Density~WolfDensit+I(WolfDensit^2), data=df.i), newdata=data.frame(WolfDensit=1.9))))
+                      predict(lm(Moose.Density~WolfDensit+I(WolfDensit^2), data=df.i), newdata=data.frame(WolfDensit=wf_int))))
               
 int.data <- rbind(int.data,a)
 }
@@ -93,8 +95,15 @@ int.data%>%
   summarize(median=median(val)%>%round(2),
             upper=quantile(val,0.95)%>%round(2),
             lower=quantile(val,0.05)%>%round(2))%>%
-  print()
+  kable()
 ```
+
+    ## `summarise()` ungrouping output (override with `.groups` argument)
+
+| type  | median | upper | lower |
+| :---- | -----: | ----: | ----: |
+| moose |   2.86 |  3.66 |  1.92 |
+| wolf  |   1.74 |  2.91 |  0.80 |
 
 \#\#transformations to linear
 
