@@ -80,7 +80,7 @@ twdshp <- st_read(here::here("WMUs_Moose", "TweedsMooseSurveyDiss.shp"))%>%
 moose$p.area<-1
 moose$Survey.Area <- as.character(moose$Survey.Area)
 ###get wolf data in same proj
-wf <- wf%>%st_transform(st_crs(mshp)[2]$proj4string)
+wf <- wf%>%st_transform("+proj=aea +lat_1=50 +lat_2=58.5 +lat_0=45 +lon_0=-126 +x_0=1000000 +y_0=0 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
 
 wf%>%
   filter(Name%in%"Cold Lake")%>%
@@ -256,6 +256,7 @@ wf <- wf%>%
     group_by(Name)%>%
     summarise(WolfDensit=mean(WolfDensit))
 
+
 plot(wf)
 
 for(i in 1:nrow(moose)){
@@ -395,10 +396,10 @@ inset <- ggplot() +
 
 
 ggplot() +
-  geom_sf(data = us, fill ="grey95") +
-  geom_sf(data = can, fill ="grey95") +
-  geom_sf(data=b.rang, fill="grey75", col=NA)+
-  geom_sf(data=bou.ranges, fill="grey35", col=NA)+
+  geom_sf(data = us, fill ="grey97") +
+  geom_sf(data = can, fill ="grey97") +
+  geom_sf(data=b.rang, fill="grey83", col=NA)+
+  geom_sf(data=bou.ranges, fill="grey60", col=NA)+
   geom_sf(data=wf%>%filter(!Name%in%c("Tweedsmuir"))%>%left_join(disturb, by="Name"), aes(fill=disturb.p), color="black")+
   ggsflabel::geom_sf_text(data=can%>%filter(!PROV%in%c("NT", "SK")),aes(label = PROV), color="black")+
   ggsflabel::geom_sf_text(data=can%>%filter(PROV%in%"NT"),aes(label = PROV), color="black", nudge_y=-100000, nudge_x=150000)+

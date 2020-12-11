@@ -1,7 +1,7 @@
 Caribou Path Analysis
 ================
 Clayton T. Lamb
-08 November, 2020
+11 December, 2020
 
 \#\#Load Data, Functions and Cleanup Data
 
@@ -18,7 +18,7 @@ library(QuantPsyc)
 library(ggpubr)
 library(MuMIn)
 library(knitr)
-library(piecewiseSEM)
+library(piecewiseSEM) 
 library(tidyverse)
 
 ##data
@@ -709,7 +709,8 @@ b <- ggraph(manual_layout) +
   geom_node_text(aes(filter=name%in%c("vegetation",  "caribou", "habitat alteration"), label=name) ,hjust="inward",angle=0)+
   geom_node_text(aes(filter=name%in%c("moose"), label=name) ,hjust=1.2,vjust=0.05,angle=-20)+
   geom_node_text(aes(filter=name%in%c("wolf"), label=name) ,hjust=1.45,vjust=0.1,angle=-20)+
-  theme_graph()
+  theme_graph()+
+  theme(legend.text = element_text(size=18))
 b
 ```
 
@@ -725,7 +726,7 @@ ggarrange(a,b,
 ![](README_files/figure-gfm/Plot%20paths-3.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots","Fig3.png"), width=9, height=3.5, units="in")
+ggsave(here::here("plots","Fig5.png"), width=9, height=3.5, units="in")
 ```
 
 \#\#DAGS
