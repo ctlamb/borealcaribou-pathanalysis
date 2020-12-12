@@ -225,8 +225,8 @@ r1c <-ggplot(df, aes(x=disturb.p, y=WolfDensit))+
 
 
 ggarrange(a,b,c,d,r1a,r1b,r1c,nrow=2,ncol=4, labels ="AUTO")
-ggsave(here::here("plots","univar.png"), width=9.5, height=5, units="in")
-
+ggsave(here::here("plots","univar.png"), width=9.5, height=5, units="in",dpi=800)
+ggsave(here::here("plots","univar.pdf"), width=9.5, height=5, units="in")
 
 f <- ggplot(df, aes(x=WolfDensit, y=survival))+
   geom_point()+
@@ -247,7 +247,8 @@ g <- ggplot(df, aes(x=WolfDensit, y=reproduction))+
 ggarrange(f,g,
           ncol = 2, nrow = 1,
           labels="AUTO")
-ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in")
+ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in",dpi=800)
+ggsave(here::here("plots","vitalrate_wolf.pdf"), width=6, height=2.7, units="in")
 
 
 
@@ -654,8 +655,7 @@ ggarrange(a,b,
           ncol = 2, nrow = 1,
           widths=c(1,1),
           labels="AUTO")
-ggsave(here::here("plots","Fig5.png"), width=9, height=3.5, units="in")
-
+ggsave(here::here("plots","Fig5.png"), width=9, height=3.5, units="in", dpi=800)
 ```
 
 
@@ -788,7 +788,7 @@ f <-ggraph(manual_layout) +
 ggarrange(a,b,c,d,e,f,
           ncol = 3, nrow = 2,
           labels="AUTO")
-ggsave(here::here("plots","Fig2.png"), width=9, height=6, units="in")
+ggsave(here::here("plots","Fig2.png"), width=9, height=6, units="in",dpi=800)
 ```
 
 
