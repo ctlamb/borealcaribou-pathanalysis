@@ -71,7 +71,7 @@ mshp <- st_read(here::here("WMUs_Moose", "Alberta_WMUs_Moose.shp"))%>%
   filter(WMU %in% c(529,512,519,517))
 
 twdshp <- st_read(here::here("WMUs_Moose", "TweedsMooseSurveyDiss.shp"))%>%
-  st_transform(st_crs(mshp)[2]$proj4string)
+  st_transform(st_crs(mshp)$proj4string)
 
 #plot(st_geometry(mshp))
 #plot(st_geometry(twdshp))
@@ -126,7 +126,7 @@ moose <- moose%>%
 ##load caribou data
 ##################
 b.rang <- st_read(here::here("Boreal_Caribou_Range_Boundaries_AsOfJune62012", "Boreal_Caribou_Range_Boundaries_AsOfJune62012.shp"))%>%
-  st_transform(st_crs(mshp)[2]$proj4string)
+  st_transform(st_crs(mshp)$proj4string)
 
 
 b.ab <- read_csv(here::here("DemographyForms", "2019_07_CLAR_CLAB_CLSK_ESAR_YATE_Demographic_Update_Preliminary.csv"))%>%
@@ -422,6 +422,6 @@ ggplot() +
 
 
 
-ggsave("/Users/clayton.lamb/Google Drive/Documents/University/Work/Serrouya_BouPathway/borealcaribou-pathanalysis/plots/map.png", width=5, height=4, units="in")
-
+ggsave("/Users/clayton.lamb/Google Drive/Documents/University/Work/Serrouya_BouPathway/borealcaribou-pathanalysis/plots/map.png", width=5, height=4, units="in", dpi=800)
+ggsave("/Users/clayton.lamb/Google Drive/Documents/University/Work/Serrouya_BouPathway/borealcaribou-pathanalysis/plots/map.pdf", width=5, height=4, units="in")
 
