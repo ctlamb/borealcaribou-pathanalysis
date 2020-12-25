@@ -1,7 +1,7 @@
 Caribou Path Analysis
 ================
 Clayton T. Lamb
-11 December, 2020
+24 December, 2020
 
 \#\#Load Data, Functions and Cleanup Data
 
@@ -174,8 +174,8 @@ a <-ggplot(df, aes(x=disturb.p, y=dEVI))+
     geom_line(data=df%>%mutate(pred=predict(lm(dEVI.t~disturb.p,data=.))%>%log()/.005), aes(x=disturb.p, y=pred), colour="grey")+
   geom_point()+
   theme_bw()+
-  ylab("Vegetation index")+
-  xlab("Habitat alteration")+
+  ylab(expression("Vegetation Index ("*Delta*"EVI)"))+
+  xlab("Habitat alteration (%)")+
   theme(panel.grid.minor = element_blank())
 
 b <-ggplot(df, aes(x=dEVI, y=Moose.Density))+
@@ -183,7 +183,7 @@ b <-ggplot(df, aes(x=dEVI, y=Moose.Density))+
   geom_point()+
   theme_bw()+
   theme(panel.grid.minor = element_blank())+
-  xlab("Vegetation index")+
+  xlab(expression("Vegetation Index ("*Delta*"EVI)"))+
   ylab(expression(Moose~(ind./100~km^2)))+
   scale_y_continuous( limits = c(0,NA))+
   scale_x_continuous(limits = c(750,NA))
@@ -212,7 +212,7 @@ r1a <-ggplot(df, aes(x=disturb.p, y=exp(caribou.lambda)))+
   theme_bw()+
   theme(panel.grid.minor = element_blank())+
   geom_hline(yintercept=1, linetype="dashed")+
-  xlab("Habitat Alteration")+
+  xlab("Habitat alteration (%)")+
   ylab("Caribou pop. growth")
 
 
@@ -222,7 +222,7 @@ r1b <-ggplot(df, aes(x=dEVI, y=exp(caribou.lambda)))+
   theme_bw()+
   theme(panel.grid.minor = element_blank())+
   geom_hline(yintercept=1, linetype="dashed")+
-  xlab("Vegetation index")+
+  xlab(expression("Vegetation Index ("*Delta*"EVI)"))+
   ylab("Caribou pop. growth")+
   scale_x_continuous(limits = c(750,NA))
 
@@ -232,7 +232,7 @@ r1c <-ggplot(df, aes(x=disturb.p, y=WolfDensit))+
   theme_bw()+
   theme(panel.grid.minor = element_blank())+
   ylab(expression(Wolf~(ind./1000~km^2)))+
-  xlab("Habitat Alteration")
+  xlab("Habitat alteration (%)")
 
 
 ggarrange(a,b,c,d,r1a,r1b,r1c,nrow=2,ncol=4, labels ="AUTO")
@@ -241,8 +241,8 @@ ggarrange(a,b,c,d,r1a,r1b,r1c,nrow=2,ncol=4, labels ="AUTO")
 ![](README_files/figure-gfm/plot%20raw%20data-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots","univar.png"), width=9.5, height=5, units="in")
-
+ggsave(here::here("plots","univar.png"), width=10.5, height=5.5, units="in",dpi=800)
+ggsave(here::here("plots","univar.pdf"), width=10.5, height=5.5, units="in")
 
 f <- ggplot(df, aes(x=WolfDensit, y=survival))+
   geom_point()+
@@ -268,7 +268,8 @@ ggarrange(f,g,
 ![](README_files/figure-gfm/plot%20raw%20data-2.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in")
+ggsave(here::here("plots","vitalrate_wolf.png"), width=6, height=2.7, units="in",dpi=800)
+ggsave(here::here("plots","vitalrate_wolf.pdf"), width=6, height=2.7, units="in")
 ```
 
 \#\#Correlation marix
@@ -726,7 +727,7 @@ ggarrange(a,b,
 ![](README_files/figure-gfm/Plot%20paths-3.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots","Fig5.png"), width=9, height=3.5, units="in")
+ggsave(here::here("plots","Fig5.png"), width=9, height=3.5, units="in", dpi=800)
 ```
 
 \#\#DAGS
@@ -862,5 +863,5 @@ ggarrange(a,b,c,d,e,f,
 ![](README_files/figure-gfm/dags-1.png)<!-- -->
 
 ``` r
-ggsave(here::here("plots","Fig2.png"), width=9, height=6, units="in")
+ggsave(here::here("plots","Fig2.png"), width=9, height=6, units="in",dpi=800)
 ```
