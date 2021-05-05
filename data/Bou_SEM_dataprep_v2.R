@@ -291,7 +291,10 @@ final <- disturb%>%
   left_join(wf%>%as_tibble()%>%dplyr::select(Name,WolfDensit), by="Name")%>%
   left_join(b.lam, by="Name")%>%
   rename(dEVI=LAI)%>%
-  filter(Name!="Tweedsmuir")  ##remove Tweedsmuir- non-boreal
+  filter(Name!="Tweedsmuir")%>%  ##remove Tweedsmuir- non-boreal
+  left_join(wf%>%tibble%>%mutate(Fig1.label.lookup=1:14)%>%select(Name,Fig1.label.lookup))%>%
+  relocate(Fig1.label.lookup, .after=Name)
+  
 
 
 write.csv(final, here::here("final.csv"))
